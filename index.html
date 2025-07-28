@@ -1869,44 +1869,58 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
             try {
                 console.log('🚀 Initializing dashboard...');
                 
+                // Initialize transformerMeterMappings as empty array
+                if (!Array.isArray(transformerMeterMappings)) {
+                    transformerMeterMappings = [];
+                    console.log('📝 Initialized transformerMeterMappings as empty array');
+                }
+                
                 setupEventListeners();
                 
-                // Set default dates
-                const today = new Date();
-                if (elements.endDateInput) {
-                    elements.endDateInput.value = today.toISOString().split('T')[0];
-                }
-                if (elements.monthInput) {
-                    elements.monthInput.value = today.toISOString().slice(0, 7);
-                }
-                
-                const thirtyDaysAgo = new Date();
-                thirtyDaysAgo.setDate(today.getDate() - 30);
-                if (elements.startDateInput) {
-                    elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                // Set default dates with error handling
+                try {
+                    const today = new Date();
+                    if (elements.endDateInput) {
+                        elements.endDateInput.value = today.toISOString().split('T')[0];
+                    }
+                    if (elements.monthInput) {
+                        elements.monthInput.value = today.toISOString().slice(0, 7);
+                    }
+                    
+                    const thirtyDaysAgo = new Date();
+                    thirtyDaysAgo.setDate(today.getDate() - 30);
+                    if (elements.startDateInput) {
+                        elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                    }
+                } catch (dateError) {
+                    console.error('❌ Error setting default dates:', dateError);
                 }
 
                 // Check for existing data
-                const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-                const authorities = Object.keys(allData);
-                
-                if (authorities.length > 0) {
-                    console.log('📊 Found existing data for authorities:', authorities);
-                    analysisDone = true;
-                    const latestAuthority = authorities.sort().pop();
-                    const transformers = Object.keys(allData[latestAuthority]).sort();
-                    const latestTransformer = transformers.pop();
-                    const months = Object.keys(allData[latestAuthority][latestTransformer]).sort();
-                    const latestMonth = months.pop();
+                try {
+                    const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+                    const authorities = Object.keys(allData);
+                    
+                    if (authorities.length > 0) {
+                        console.log('📊 Found existing data for authorities:', authorities);
+                        analysisDone = true;
+                        const latestAuthority = authorities.sort().pop();
+                        const transformers = Object.keys(allData[latestAuthority]).sort();
+                        const latestTransformer = transformers.pop();
+                        const months = Object.keys(allData[latestAuthority][latestTransformer]).sort();
+                        const latestMonth = months.pop();
 
-                    populateSelectors({ 
-                        authority: latestAuthority, 
-                        transformer: latestTransformer, 
-                        month: latestMonth 
-                    });
-                    displayResults(allData[latestAuthority][latestTransformer][latestMonth]);
-                } else {
-                    console.log('📝 No existing data found');
+                        populateSelectors({ 
+                            authority: latestAuthority, 
+                            transformer: latestTransformer, 
+                            month: latestMonth 
+                        });
+                        displayResults(allData[latestAuthority][latestTransformer][latestMonth]);
+                    } else {
+                        console.log('📝 No existing data found');
+                    }
+                } catch (dataError) {
+                    console.error('❌ Error loading existing data:', dataError);
                 }
 
                 renderAppForRole();
@@ -1997,6 +2011,12 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
             try {
                 console.log('🎯 DOM Content Loaded, starting application...');
                 
+                // Initialize global variables first
+                if (typeof transformerMeterMappings === 'undefined') {
+                    window.transformerMeterMappings = [];
+                    console.log('🔧 Initialized global transformerMeterMappings');
+                }
+                
                 initializeDashboard();
                 enhanceAccessibility();
                 
@@ -2011,6 +2031,8 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 if (missingElements.length > 0) {
                     console.error('❌ Missing required DOM elements:', missingElements);
                     showError(`เกิดข้อผิดพลาดในการโหลดหน้าเว็บ: ไม่พบ elements ${missingElements.join(', ')}`);
+                } else {
+                    console.log('✅ All required DOM elements found');
                 }
                 
                 console.log('✅ Application started successfully');
@@ -2027,7 +2049,7 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                         <input type="file" accept=".json" onchange="window.importResults(event)" class="block w-full text-xs">
                         <button onclick="window.clearAllData()" class="block w-full text-left hover:bg-gray-700 p-2 rounded text-red-400">🗑️ Clear All Data</button>
                         <button onclick="console.clear()" class="block w-full text-left hover:bg-gray-700 p-2 rounded">🧹 Clear Console</button>
-                        <button onclick="console.log('Current state:', {transformerMeterMappings, currentUser, analysisDone})" class="block w-full text-left hover:bg-gray-700 p-2 rounded">📊 Log State</button>
+                        <button onclick="console.log('Current state:', {transformerMeterMappings: window.transformerMeterMappings, currentUser, analysisDone})" class="block w-full text-left hover:bg-gray-700 p-2 rounded">📊 Log State</button>
                     `;
                     document.body.appendChild(debugPanel);
                     
