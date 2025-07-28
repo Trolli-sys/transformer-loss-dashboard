@@ -456,21 +456,23 @@
 
                         <!-- Auto-detected Mapping Display -->
                         <div class="bg-blue-50 rounded-xl p-6 mb-8">
-                            <div class="flex items-center mb-4">
-                                <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <h4 class="text-lg font-semibold text-blue-800">การจับคู่อัตโนมัติ</h4>
-                            </div>
-                            <p class="text-blue-700 mb-4">ระบบจะอ่านการจับคู่หม้อแปลงและมิเตอร์จากไฟล์ข้อมูลโดยอัตโนมัติ</p>
-                            <div id="detected-mappings" class="space-y-3">
-                                <div class="text-blue-600 text-sm">กรุณาอัปโหลดไฟล์ข้อมูลเพื่อแสดงการจับคู่</div>
-                                <button id="manual-detect-btn" class="btn-secondary text-sm hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <h4 class="text-lg font-semibold text-blue-800">การจับคู่อัตโนมัติ</h4>
+                                </div>
+                                <button id="detect-mappings-btn" class="btn-primary text-sm">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                     </svg>
-                                    ลองตรวจสอบอีกครั้ง
+                                    ตรวจสอบการจับคู่
                                 </button>
+                            </div>
+                            <p class="text-blue-700 mb-4">ระบบจะอ่านการจับคู่หม้อแปลงและมิเตอร์จากไฟล์ข้อมูลโดยอัตโนมัติ</p>
+                            <div id="detected-mappings" class="space-y-3">
+                                <div class="text-blue-600 text-sm">🔗 ใส่ลิงก์ไฟล์มิเตอร์แล้วกดปุ่ม "ตรวจสอบการจับคู่"</div>
                             </div>
                         </div>
 
@@ -1750,9 +1752,11 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
             });
 
             // Manual detect button
-            const manualDetectBtn = document.getElementById('manual-detect-btn');
-            if (manualDetectBtn) {
-                manualDetectBtn.addEventListener('click', () => {
+            const detectBtn = document.getElementById('detect-mappings-btn');
+            if (detectBtn) {
+                detectBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     detectMappingsFromUrls();
                 });
             }
