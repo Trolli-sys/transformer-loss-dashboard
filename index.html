@@ -1827,29 +1827,46 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 calculateLoss();
             });
 
-            // Manual detect button with better error handling
+            // Manual detect button with comprehensive error handling
             const detectBtn = document.getElementById('detect-mappings-btn');
             if (detectBtn) {
-                detectBtn.addEventListener('click', (e) => {
+                detectBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    const meterUrl = elements.meterUrl.value.trim();
-                    if (!meterUrl) {
-                        showError('กรุณาใส่ลิงก์ Google Sheets ของไฟล์มิเตอร์ก่อน');
-                        elements.meterUrl.focus();
-                        return;
+                    try {
+                        const meterUrl = elements.meterUrl.value.trim();
+                        console.log('🔍 Detect button clicked, meter URL:', meterUrl);
+                        
+                        if (!meterUrl) {
+                            showError('กรุณาใส่ลิงก์ Google Sheets ของไฟล์มิเตอร์ก่อน');
+                            elements.meterUrl.focus();
+                            return;
+                        }
+                        
+                        if (!meterUrl.includes('docs.google.com/spreadsheets')) {
+                            showError('ลิงก์ไม่ใช่ Google Sheets ที่ถูกต้อง กรุณาตรวจสอบ URL');
+                            elements.meterUrl.focus();
+                            return;
+                        }
+                        
+                        console.log('🚀 Starting mapping detection...');
+                        await detectMappingsFromUrls();
+                        
+                    } catch (error) {
+                        console.error('❌ Error in detect button handler:', error);
+                        showError(`เกิดข้อผิดพลาดในการตรวจสอบ: ${error.message}`);
+                        
+                        // Reset button state
+                        const detectBtnText = document.getElementById('detect-btn-text');
+                        if (detectBtnText) {
+                            detectBtnText.textContent = 'ตรวจสอบการจับคู่';
+                        }
+                        detectBtn.disabled = false;
                     }
-                    
-                    if (!meterUrl.includes('docs.google.com/spreadsheets')) {
-                        showError('ลิงก์ไม่ใช่ Google Sheets ที่ถูกต้อง กรุณาตรวจสอบ URL');
-                        elements.meterUrl.focus();
-                        return;
-                    }
-                    
-                    console.log('🚀 Manual detect button clicked, starting detection...');
-                    detectMappingsFromUrls();
                 });
+            } else {
+                console.error('❌ Detect button not found!');
             }
 
             // Selector changes
@@ -1870,157 +1887,273 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
             localStorage.setItem('transformerMappings', JSON.stringify(mappings));
         }
 
-        // --- INITIALIZATION ---
+        // --- STARTUP AND INITIALIZATION ---
         function initializeDashboard() {
-            setupEventListeners();
-            
-            // Set default dates
-            const today = new Date();
-            elements.endDateInput.value = today.toISOString().split('T')[0];
-            elements.monthInput.value = today.toISOString().slice(0, 7);
-            
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
-
-            // Check for existing data
-            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-            const authorities = Object.keys(allData);
-            
-            if (authorities.length > 0) {
-                analysisDone = true;
-                const latestAuthority = authorities.sort().pop();
-                const transformers = Object.keys(allData[latestAuthority]).sort();
-                const latestTransformer = transformers.pop();
-                const months = Object.keys(allData[latestAuthority][latestTransformer]).sort();
-                const latestMonth = months.pop();
-
-                populateSelectors({ 
-                    authority: latestAuthority, 
-                    transformer: latestTransformer, 
-                    month: latestMonth 
-                });
-                displayResults(allData[latestAuthority][latestTransformer][latestMonth]);
-            }
-
-            renderAppForRole();
-        }
-
-        // --- ADDITIONAL UTILITY FUNCTIONS ---
-        function exportResults() {
-            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-            const dataStr = JSON.stringify(allData, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(dataBlob);
-            link.download = `loss_analysis_${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-        }
-
-        function importResults(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    localStorage.setItem('allDashboardData', JSON.stringify(importedData));
-                    location.reload(); // Refresh to show imported data
-                } catch (error) {
-                    showError('ไฟล์ที่นำเข้าไม่ถูกต้อง');
+            try {
+                console.log('🚀 Initializing dashboard...');
+                
+                setupEventListeners();
+                
+                // Set default dates
+                const today = new Date();
+                if (elements.endDateInput) {
+                    elements.endDateInput.value = today.toISOString().split('T')[0];
                 }
-            };
-            reader.readAsText(file);
-        }
+                if (elements.monthInput) {
+                    elements.monthInput.value = today.toISOString().slice(0, 7);
+                }
+                
+                const thirtyDaysAgo = new Date();
+                thirtyDaysAgo.setDate(today.getDate() - 30);
+                if (elements.startDateInput) {
+                    elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
+                }
 
-        function clearAllData() {
-            if (confirm('คุณต้องการลบข้อมูลทั้งหมดหรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้')) {
-                localStorage.removeItem('allDashboardData');
-                localStorage.removeItem('transformerMappings');
-                location.reload();
+                // Check for existing data
+                const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+                const authorities = Object.keys(allData);
+                
+                if (authorities.length > 0) {
+                    console.log('📊 Found existing data for authorities:', authorities);
+                    analysisDone = true;
+                    const latestAuthority = authorities.sort().pop();
+                    const transformers = Object.keys(allData[latestAuthority]).sort();
+                    const latestTransformer = transformers.pop();
+                    const months = Object.keys(allData[latestAuthority][latestTransformer]).sort();
+                    const latestMonth = months.pop();
+
+                    populateSelectors({ 
+                        authority: latestAuthority, 
+                        transformer: latestTransformer, 
+                        month: latestMonth 
+                    });
+                    displayResults(allData[latestAuthority][latestTransformer][latestMonth]);
+                } else {
+                    console.log('📝 No existing data found');
+                }
+
+                renderAppForRole();
+                console.log('✅ Dashboard initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Error initializing dashboard:', error);
+                showError(`เกิดข้อผิดพลาดในการเริ่มต้นระบบ: ${error.message}`);
             }
         }
 
         // --- ENHANCED DATA VALIDATION ---
         function validateGoogleSheetUrl(url) {
-            const pattern = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9-_]+/;
-            return pattern.test(url);
+            try {
+                const pattern = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9-_]+/;
+                return pattern.test(url);
+            } catch (error) {
+                console.error('Error validating URL:', error);
+                return false;
+            }
         }
 
         function validateDateRange(startDate, endDate) {
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            return {
-                valid: start <= end && diffDays <= 365,
-                message: diffDays > 365 ? 'ช่วงวันที่ไม่ควรเกิน 365 วัน' : 
-                        start > end ? 'วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด' : ''
-            };
+            try {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                return {
+                    valid: start <= end && diffDays <= 365,
+                    message: diffDays > 365 ? 'ช่วงวันที่ไม่ควรเกิน 365 วัน' : 
+                            start > end ? 'วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด' : ''
+                };
+            } catch (error) {
+                console.error('Error validating date range:', error);
+                return { valid: false, message: 'รูปแบบวันที่ไม่ถูกต้อง' };
+            }
         }
 
         // --- PERFORMANCE MONITORING ---
         function trackPerformance(operation, startTime) {
-            const endTime = performance.now();
-            const duration = endTime - startTime;
-            console.log(`${operation} completed in ${duration.toFixed(2)}ms`);
-            
-            if (duration > 5000) { // Alert if operation takes more than 5 seconds
-                showError(`การดำเนินการ ${operation} ใช้เวลานานเกินไป (${(duration/1000).toFixed(1)} วินาที)`);
+            try {
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                console.log(`⏱️ ${operation} completed in ${duration.toFixed(2)}ms`);
+                
+                if (duration > 5000) { // Alert if operation takes more than 5 seconds
+                    console.warn(`⚠️ Slow operation: ${operation} took ${(duration/1000).toFixed(1)} seconds`);
+                }
+            } catch (error) {
+                console.error('Error tracking performance:', error);
             }
         }
 
         // --- ACCESSIBILITY ENHANCEMENTS ---
         function enhanceAccessibility() {
-            // Add ARIA labels
-            elements.calculateBtn.setAttribute('aria-label', 'คำนวณและบันทึกข้อมูลการวิเคราะห์');
-            elements.adminLoginBtn.setAttribute('aria-label', 'เข้าสู่ระบบผู้ดูแล');
-            
-            // Add keyboard navigation
-            document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.key === 'Enter') {
-                    if (!elements.calculateBtn.disabled) {
-                        calculateLoss();
-                    }
+            try {
+                // Add ARIA labels
+                if (elements.calculateBtn) {
+                    elements.calculateBtn.setAttribute('aria-label', 'คำนวณและบันทึกข้อมูลการวิเคราะห์');
                 }
-            });
+                if (elements.adminLoginBtn) {
+                    elements.adminLoginBtn.setAttribute('aria-label', 'เข้าสู่ระบบผู้ดูแล');
+                }
+                
+                // Add keyboard navigation
+                document.addEventListener('keydown', (e) => {
+                    try {
+                        if (e.ctrlKey && e.key === 'Enter') {
+                            if (elements.calculateBtn && !elements.calculateBtn.disabled) {
+                                calculateLoss();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error in keyboard handler:', error);
+                    }
+                });
+                
+                console.log('♿ Accessibility enhancements applied');
+            } catch (error) {
+                console.error('Error enhancing accessibility:', error);
+            }
         }
 
         // --- START APPLICATION ---
         document.addEventListener('DOMContentLoaded', () => {
-            initializeDashboard();
-            enhanceAccessibility();
-            
-            // Add some admin utilities (hidden)
-            if (window.location.hash === '#debug') {
-                const debugPanel = document.createElement('div');
-                debugPanel.className = 'fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg text-sm space-y-2';
-                debugPanel.innerHTML = `
-                    <button onclick="exportResults()" class="block w-full text-left hover:bg-gray-700 p-2 rounded">Export Data</button>
-                    <input type="file" accept=".json" onchange="importResults(event)" class="block w-full text-xs">
-                    <button onclick="clearAllData()" class="block w-full text-left hover:bg-gray-700 p-2 rounded text-red-400">Clear All Data</button>
-                `;
-                document.body.appendChild(debugPanel);
+            try {
+                console.log('🎯 DOM Content Loaded, starting application...');
                 
-                // Make functions global for debug panel
-                window.exportResults = exportResults;
-                window.importResults = importResults;
-                window.clearAllData = clearAllData;
+                initializeDashboard();
+                enhanceAccessibility();
+                
+                // Validate that all required elements exist
+                const requiredElements = [
+                    'transformerUrl', 'meterUrl', 'authorityInput', 
+                    'startDateInput', 'endDateInput', 'monthInput',
+                    'calculateBtn', 'adminLoginBtn', 'logoutBtn'
+                ];
+                
+                const missingElements = requiredElements.filter(key => !elements[key]);
+                if (missingElements.length > 0) {
+                    console.error('❌ Missing required DOM elements:', missingElements);
+                    showError(`เกิดข้อผิดพลาดในการโหลดหน้าเว็บ: ไม่พบ elements ${missingElements.join(', ')}`);
+                }
+                
+                console.log('✅ Application started successfully');
+                
+                // Add debug utilities in development
+                if (window.location.hash === '#debug') {
+                    console.log('🔧 Debug mode enabled');
+                    
+                    const debugPanel = document.createElement('div');
+                    debugPanel.className = 'fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg text-sm space-y-2 z-50';
+                    debugPanel.innerHTML = `
+                        <div class="font-bold text-yellow-400">🔧 Debug Panel</div>
+                        <button onclick="window.exportResults()" class="block w-full text-left hover:bg-gray-700 p-2 rounded">📤 Export Data</button>
+                        <input type="file" accept=".json" onchange="window.importResults(event)" class="block w-full text-xs">
+                        <button onclick="window.clearAllData()" class="block w-full text-left hover:bg-gray-700 p-2 rounded text-red-400">🗑️ Clear All Data</button>
+                        <button onclick="console.clear()" class="block w-full text-left hover:bg-gray-700 p-2 rounded">🧹 Clear Console</button>
+                        <button onclick="console.log('Current state:', {transformerMeterMappings, currentUser, analysisDone})" class="block w-full text-left hover:bg-gray-700 p-2 rounded">📊 Log State</button>
+                    `;
+                    document.body.appendChild(debugPanel);
+                    
+                    // Make functions global for debug panel
+                    window.exportResults = exportResults;
+                    window.importResults = importResults;
+                    window.clearAllData = clearAllData;
+                }
+                
+            } catch (error) {
+                console.error('❌ Critical error during application startup:', error);
+                const errorDiv = document.getElementById('error-message');
+                const errorText = document.getElementById('error-text');
+                if (errorDiv && errorText) {
+                    errorText.textContent = `เกิดข้อผิดพลาดร้ายแรงในการเริ่มต้นระบบ: ${error.message}`;
+                    showElement(errorDiv);
+                }
             }
         });
 
+        // --- UTILITY FUNCTIONS FOR DEBUG ---
+        function exportResults() {
+            try {
+                const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+                const dataStr = JSON.stringify(allData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `loss_analysis_${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+            } catch (error) {
+                console.error('Error exporting results:', error);
+                showError('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+            }
+        }
+
+        function importResults(event) {
+            try {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        localStorage.setItem('allDashboardData', JSON.stringify(importedData));
+                        showSuccess('นำเข้าข้อมูลสำเร็จ กำลังรีเฟรชหน้า...');
+                        setTimeout(() => location.reload(), 1000);
+                    } catch (error) {
+                        showError('ไฟล์ที่นำเข้าไม่ถูกต้อง');
+                    }
+                };
+                reader.readAsText(file);
+            } catch (error) {
+                console.error('Error importing results:', error);
+                showError('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
+            }
+        }
+
+        function clearAllData() {
+            try {
+                if (confirm('คุณต้องการลบข้อมูลทั้งหมดหรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้')) {
+                    localStorage.removeItem('allDashboardData');
+                    localStorage.removeItem('transformerMappings');
+                    showSuccess('ลบข้อมูลทั้งหมดแล้ว กำลังรีเฟรชหน้า...');
+                    setTimeout(() => location.reload(), 1000);
+                }
+            } catch (error) {
+                console.error('Error clearing data:', error);
+                showError('เกิดข้อผิดพลาดในการลบข้อมูล');
+            }
+        }
+
         // --- GLOBAL ERROR HANDLER ---
         window.addEventListener('error', (e) => {
-            console.error('Global error:', e.error);
-            showError('เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่อีกครั้ง');
+            console.error('🚨 Global error caught:', e.error);
+            console.error('Error details:', {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                colno: e.colno,
+                stack: e.error?.stack
+            });
+            
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            if (errorDiv && errorText) {
+                errorText.textContent = `JavaScript Error: ${e.message} (Line: ${e.lineno})`;
+                showElement(errorDiv);
+            }
         });
 
         window.addEventListener('unhandledrejection', (e) => {
-            console.error('Unhandled promise rejection:', e.reason);
-            showError('เกิดข้อผิดพลาดในการประมวลผล กรุณาตรวจสอบข้อมูลและลองใหม่');
+            console.error('🚨 Unhandled promise rejection:', e.reason);
+            console.error('Promise rejection details:', e);
+            
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            if (errorDiv && errorText) {
+                errorText.textContent = `Promise Error: ${e.reason?.message || e.reason}`;
+                showElement(errorDiv);
+            }
         });
     </script>
 </body>
