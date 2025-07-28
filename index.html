@@ -465,6 +465,12 @@
                             <p class="text-blue-700 mb-4">ระบบจะอ่านการจับคู่หม้อแปลงและมิเตอร์จากไฟล์ข้อมูลโดยอัตโนมัติ</p>
                             <div id="detected-mappings" class="space-y-3">
                                 <div class="text-blue-600 text-sm">กรุณาอัปโหลดไฟล์ข้อมูลเพื่อแสดงการจับคู่</div>
+                                <button id="manual-detect-btn" class="btn-secondary text-sm hidden">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                    ลองตรวจสอบอีกครั้ง
+                                </button>
                             </div>
                         </div>
 
@@ -1714,11 +1720,25 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 renderAppForRole();
             });
 
-            // Input validation
+            // Input validation - with immediate mapping detection
             [elements.transformerUrl, elements.meterUrl, elements.authorityInput, 
              elements.startDateInput, elements.endDateInput, elements.monthInput].forEach(input => {
                 input.addEventListener('input', validateInputs);
                 input.addEventListener('change', validateInputs);
+                input.addEventListener('blur', validateInputs); // Add blur event for better detection
+            });
+
+            // Special handling for URL inputs to detect mappings immediately
+            elements.meterUrl.addEventListener('paste', (e) => {
+                setTimeout(() => {
+                    validateInputs();
+                }, 100);
+            });
+
+            elements.transformerUrl.addEventListener('paste', (e) => {
+                setTimeout(() => {
+                    validateInputs();
+                }, 100);
             });
 
             // Calculate button - with additional debug
@@ -1728,6 +1748,14 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 e.stopPropagation();
                 calculateLoss();
             });
+
+            // Manual detect button
+            const manualDetectBtn = document.getElementById('manual-detect-btn');
+            if (manualDetectBtn) {
+                manualDetectBtn.addEventListener('click', () => {
+                    detectMappingsFromUrls();
+                });
+            }
 
             // Selector changes
             elements.viewAuthoritySelect.addEventListener('change', () => populateTransformerSelector());
