@@ -1085,21 +1085,32 @@
         }
 
         async function calculateLoss() {
+            console.log('Calculate button clicked');
+            
             try {
                 elements.calculateBtn.disabled = true;
                 showElement(elements.loadingSpinner);
                 clearError();
 
+                console.log('Current mappings:', transformerMeterMappings);
+
                 // Use auto-detected mappings instead of manual ones
                 const mappings = transformerMeterMappings;
                 if (mappings.length === 0) {
-                    throw new Error('ไม่พบการจับคู่หม้อแปลงและมิเตอร์ในไฟล์ข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์');
+                    throw new Error('ไม่พบการจับคู่หม้อแปลงและมิเตอร์ในไฟล์ข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์และลองใหม่');
                 }
+
+                console.log('Starting data fetch...');
 
                 const [transformerData, meterData] = await Promise.all([
                     fetchDataFromGoogleSheet(elements.transformerUrl.value, ['วันที่', 'KWH_TOT', 'PF_TOT', 'P_TOT']),
                     fetchDataFromGoogleSheet(elements.meterUrl.value, ['PEA Meter', 'หม้อแปลง', 'KWH_JAN'])
                 ]);
+
+                console.log('Data fetched:', {
+                    transformerCount: transformerData.length,
+                    meterCount: meterData.length
+                });
 
                 if (!transformerData.length || !meterData.length) {
                     throw new Error("ข้อมูลหม้อแปลงหรือมิเตอร์ว่างเปล่า");
@@ -1110,11 +1121,20 @@
                 const selectedMonthStr = elements.monthInput.value;
                 const authorityName = elements.authorityInput.value.trim();
 
+                console.log('Parameters:', {
+                    startDate,
+                    endDate,
+                    selectedMonthStr,
+                    authorityName
+                });
+
                 if (!startDate || !endDate) throw new Error('รูปแบบวันที่ไม่ถูกต้อง');
                 if (startDate > endDate) throw new Error('วันที่เริ่มต้นต้องมาก่อนวันที่สิ้นสุด');
 
                 const selectedMonth = new Date(selectedMonthStr + '-02T00:00:00Z').getUTCMonth();
                 const monthKeys = ['KWH_JAN', 'KWH_FEB', 'KWH_MAR', 'KWH_APR', 'KWH_MAY', 'KWH_JUN', 'KWH_JUL', 'KWH_AUG', 'KWH_SEP', 'KWH_OCT', 'KWH_NOV', 'KWH_DEC'];
+
+                console.log('Selected month:', selectedMonth, monthKeys[selectedMonth]);
 
                 // Process each transformer-meter mapping
                 const results = [];
@@ -1123,30 +1143,49 @@
                 let meterBreakdown = [];
 
                 for (const mapping of mappings) {
-                    const transformerResult = await processTransformerData(transformerData, mapping.transformerId, startDate, endDate);
-                    const meterResult = await processMeterData(meterData, mapping.meterIds, selectedMonth, monthKeys);
+                    console.log('Processing mapping:', mapping);
                     
-                    const loss = transformerResult.energy - meterResult.totalEnergy;
-                    const lossPercent = transformerResult.energy > 0 ? (loss / transformerResult.energy) * 100 : 0;
+                    try {
+                        const transformerResult = await processTransformerData(transformerData, mapping.transformerId, startDate, endDate);
+                        const meterResult = await processMeterData(meterData, mapping.meterIds, selectedMonth, monthKeys);
+                        
+                        console.log('Results for', mapping.transformerId, {
+                            transformerEnergy: transformerResult.energy,
+                            meterEnergy: meterResult.totalEnergy
+                        });
+                        
+                        const loss = transformerResult.energy - meterResult.totalEnergy;
+                        const lossPercent = transformerResult.energy > 0 ? (loss / transformerResult.energy) * 100 : 0;
 
-                    results.push({
-                        transformerId: mapping.transformerId,
-                        transformerEnergy: transformerResult.energy,
-                        sumOfMeterEnergy: meterResult.totalEnergy,
-                        loss: loss,
-                        lossPercent: lossPercent,
-                        meterIds: mapping.meterIds,
-                        meterBreakdown: meterResult.breakdown
-                    });
+                        results.push({
+                            transformerId: mapping.transformerId,
+                            transformerEnergy: transformerResult.energy,
+                            sumOfMeterEnergy: meterResult.totalEnergy,
+                            loss: loss,
+                            lossPercent: lossPercent,
+                            meterIds: mapping.meterIds,
+                            meterBreakdown: meterResult.breakdown
+                        });
 
-                    totalTransformerEnergy += transformerResult.energy;
-                    totalMeterEnergy += meterResult.totalEnergy;
-                    meterBreakdown = meterBreakdown.concat(meterResult.breakdown);
+                        totalTransformerEnergy += transformerResult.energy;
+                        totalMeterEnergy += meterResult.totalEnergy;
+                        meterBreakdown = meterBreakdown.concat(meterResult.breakdown);
+                    } catch (mapError) {
+                        console.error('Error processing mapping:', mapping.transformerId, mapError);
+                        throw new Error(`ข้อผิดพลาดในการประมวลผลหม้อแปลง ${mapping.transformerId}: ${mapError.message}`);
+                    }
                 }
 
                 // Calculate key metrics from transformer data
                 const keyMetrics = calculateKeyMetrics(transformerData, startDate, endDate);
                 const totalLoss = totalTransformerEnergy - totalMeterEnergy;
+
+                console.log('Final results:', {
+                    totalTransformerEnergy,
+                    totalMeterEnergy,
+                    totalLoss,
+                    resultsCount: results.length
+                });
 
                 // Save to localStorage
                 const allSavedData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
@@ -1173,6 +1212,8 @@
 
                 localStorage.setItem('allDashboardData', JSON.stringify(allSavedData));
 
+                console.log('Data saved successfully');
+
                 analysisDone = true;
                 renderAppForRole();
                 populateSelectors({ authority: authorityName, transformer: transformerKey, month: selectedMonthStr });
@@ -1181,6 +1222,7 @@
                 showSuccess(`วิเคราะห์เสร็จสิ้น! พบ ${mappings.length} หม้อแปลง และ ${meterBreakdown.length} มิเตอร์`);
 
             } catch (error) {
+                console.error('Calculate error:', error);
                 showError(`เกิดข้อผิดพลาด: ${error.message}`);
                 analysisDone = false;
             } finally {
@@ -1679,8 +1721,13 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 input.addEventListener('change', validateInputs);
             });
 
-            // Calculate button
-            elements.calculateBtn.addEventListener('click', calculateLoss);
+            // Calculate button - with additional debug
+            elements.calculateBtn.addEventListener('click', (e) => {
+                console.log('Calculate button event triggered');
+                e.preventDefault();
+                e.stopPropagation();
+                calculateLoss();
+            });
 
             // Selector changes
             elements.viewAuthoritySelect.addEventListener('change', () => populateTransformerSelector());
