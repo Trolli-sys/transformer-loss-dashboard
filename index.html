@@ -435,7 +435,7 @@
                             พารามิเตอร์การวิเคราะห์
                         </h3>
                         
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                             <div>
                                 <label for="authority-input" class="block text-sm font-medium text-gray-700 mb-2">การไฟฟ้าที่รับผิดชอบ</label>
                                 <input type="text" id="authority-input" class="input-field" placeholder="เช่น ยะลา, สงขลา">
@@ -454,19 +454,17 @@
                             </div>
                         </div>
 
-                        <!-- Transformer-Meter Mapping -->
-                        <div class="bg-gray-50 rounded-xl p-6 mb-8">
-                            <div class="flex items-center justify-between mb-4">
-                                <h4 class="text-lg font-semibold text-gray-800">การจับคู่หม้อแปลงและมิเตอร์</h4>
-                                <button id="add-mapping-btn" class="btn-secondary text-sm">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    เพิ่มการจับคู่
-                                </button>
+                        <!-- Auto-detected Mapping Display -->
+                        <div class="bg-blue-50 rounded-xl p-6 mb-8">
+                            <div class="flex items-center mb-4">
+                                <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <h4 class="text-lg font-semibold text-blue-800">การจับคู่อัตโนมัติ</h4>
                             </div>
-                            <div id="mapping-container" class="space-y-4">
-                                <!-- Mapping items will be added here -->
+                            <p class="text-blue-700 mb-4">ระบบจะอ่านการจับคู่หม้อแปลงและมิเตอร์จากไฟล์ข้อมูลโดยอัตโนมัติ</p>
+                            <div id="detected-mappings" class="space-y-3">
+                                <div class="text-blue-600 text-sm">กรุณาอัปโหลดไฟล์ข้อมูลเพื่อแสดงการจับคู่</div>
                             </div>
                         </div>
 
@@ -1092,9 +1090,10 @@
                 showElement(elements.loadingSpinner);
                 clearError();
 
-                const mappings = getMappings();
+                // Use auto-detected mappings instead of manual ones
+                const mappings = transformerMeterMappings;
                 if (mappings.length === 0) {
-                    throw new Error('กรุณาตั้งค่าการจับคู่หม้อแปลงและมิเตอร์อย่างน้อย 1 รายการ');
+                    throw new Error('ไม่พบการจับคู่หม้อแปลงและมิเตอร์ในไฟล์ข้อมูล กรุณาตรวจสอบโครงสร้างไฟล์');
                 }
 
                 const [transformerData, meterData] = await Promise.all([
@@ -1178,6 +1177,8 @@
                 renderAppForRole();
                 populateSelectors({ authority: authorityName, transformer: transformerKey, month: selectedMonthStr });
                 displayResults(allSavedData[authorityName][transformerKey][selectedMonthStr]);
+
+                showSuccess(`วิเคราะห์เสร็จสิ้น! พบ ${mappings.length} หม้อแปลง และ ${meterBreakdown.length} มิเตอร์`);
 
             } catch (error) {
                 showError(`เกิดข้อผิดพลาด: ${error.message}`);
@@ -1675,6 +1676,7 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
             [elements.transformerUrl, elements.meterUrl, elements.authorityInput, 
              elements.startDateInput, elements.endDateInput, elements.monthInput].forEach(input => {
                 input.addEventListener('input', validateInputs);
+                input.addEventListener('change', validateInputs);
             });
 
             // Calculate button
@@ -1684,24 +1686,12 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
             elements.viewAuthoritySelect.addEventListener('change', () => populateTransformerSelector());
             elements.viewTransformerSelect.addEventListener('change', () => populateMonthSelector());
             elements.viewMonthSelect.addEventListener('change', loadSelectedData);
-
-            // Mapping management
-            elements.addMappingBtn.addEventListener('click', () => {
-                createMappingItem();
-                validateInputs();
-            });
         }
 
         function loadSavedMappings() {
-            // Try to load any saved mappings from localStorage
-            const savedMappings = JSON.parse(localStorage.getItem('transformerMappings') || '[]');
-            if (savedMappings.length > 0) {
-                savedMappings.forEach(mapping => {
-                    createMappingItem(mapping.transformerId, mapping.meterIds);
-                });
-            } else {
-                // Create at least one mapping item by default
-                createMappingItem();
+            // Auto-detect mappings when admin logs in if URLs are available
+            if (elements.transformerUrl.value.trim() && elements.meterUrl.value.trim()) {
+                detectMappingsFromUrls();
             }
         }
 
