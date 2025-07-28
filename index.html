@@ -1760,26 +1760,36 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 renderAppForRole();
             });
 
-            // Input validation - with immediate mapping detection
-            [elements.transformerUrl, elements.meterUrl, elements.authorityInput, 
-             elements.startDateInput, elements.endDateInput, elements.monthInput].forEach(input => {
-                input.addEventListener('input', validateInputs);
-                input.addEventListener('change', validateInputs);
-                input.addEventListener('blur', validateInputs); // Add blur event for better detection
+            // Input validation with safe element access
+            const inputElements = [
+                elements.transformerUrl, elements.meterUrl, elements.authorityInput, 
+                elements.startDateInput, elements.endDateInput, elements.monthInput
+            ].filter(el => el !== null && el !== undefined);
+            
+            inputElements.forEach(input => {
+                if (input) {
+                    input.addEventListener('input', validateInputs);
+                    input.addEventListener('change', validateInputs);
+                    input.addEventListener('blur', validateInputs);
+                }
             });
 
             // Special handling for URL inputs to detect mappings immediately
-            elements.meterUrl.addEventListener('paste', (e) => {
-                setTimeout(() => {
-                    validateInputs();
-                }, 100);
-            });
+            if (elements.meterUrl) {
+                elements.meterUrl.addEventListener('paste', (e) => {
+                    setTimeout(() => {
+                        validateInputs();
+                    }, 100);
+                });
+            }
 
-            elements.transformerUrl.addEventListener('paste', (e) => {
-                setTimeout(() => {
-                    validateInputs();
-                }, 100);
-            });
+            if (elements.transformerUrl) {
+                elements.transformerUrl.addEventListener('paste', (e) => {
+                    setTimeout(() => {
+                        validateInputs();
+                    }, 100);
+                });
+            }
 
             // Calculate button - with additional debug
             elements.calculateBtn.addEventListener('click', (e) => {
@@ -1839,8 +1849,13 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
 
         function loadSavedMappings() {
             // Auto-detect mappings when admin logs in if URLs are available
-            if (elements.transformerUrl.value.trim() && elements.meterUrl.value.trim()) {
+            console.log('🔧 loadSavedMappings called');
+            if (elements.transformerUrl && elements.meterUrl && 
+                elements.transformerUrl.value.trim() && elements.meterUrl.value.trim()) {
+                console.log('📊 URLs available, triggering mapping detection');
                 detectMappingsFromUrls();
+            } else {
+                console.log('📝 No URLs available for mapping detection');
             }
         }
 
