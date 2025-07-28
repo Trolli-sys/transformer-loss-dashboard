@@ -465,11 +465,11 @@
                                     </svg>
                                     <h4 class="text-lg font-semibold text-blue-800">การจับคู่อัตโนมัติ</h4>
                                 </div>
-                                <button id="detect-mappings-btn" class="btn-primary text-sm">
+                                <button id="detect-mappings-btn" class="btn-primary text-sm" disabled>
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                     </svg>
-                                    ตรวจสอบการจับคู่
+                                    <span id="detect-btn-text">ใส่ลิงก์มิเตอร์ก่อน</span>
                                 </button>
                             </div>
                             <p class="text-blue-700 mb-4">
@@ -478,8 +478,29 @@
                                 • <strong>มิเตอร์:</strong> ผลรวม KWH_(เดือนที่เลือก) ของมิเตอร์ทั้งหมด = พลังงานรับเข้า<br>
                                 • <strong>Loss:</strong> พลังงานจ่ายออก - พลังงานรับเข้า = การสูญเสีย
                             </p>
+                            
+                            <!-- URL Status Indicator -->
+                            <div class="mb-4 p-3 bg-white rounded-lg border border-blue-200">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-blue-800">สถานะลิงก์ไฟล์:</span>
+                                    <div class="flex space-x-4 text-xs">
+                                        <span id="transformer-url-status" class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                            🔌 หม้อแปลง: ยังไม่ได้ใส่
+                                        </span>
+                                        <span id="meter-url-status" class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                            📊 มิเตอร์: ยังไม่ได้ใส่
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div id="detected-mappings" class="space-y-3">
-                                <div class="text-blue-600 text-sm">🔗 ใส่ลิงก์ไฟล์มิเตอร์แล้วกดปุ่ม "ตรวจสอบการจับคู่"</div>
+                                <div class="text-blue-600 text-sm flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    ใส่ลิงก์ Google Sheets ของไฟล์มิเตอร์ข้างบน แล้วกดปุ่ม "ตรวจสอบการจับคู่"
+                                </div>
                             </div>
                         </div>
 
@@ -1806,12 +1827,27 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                 calculateLoss();
             });
 
-            // Manual detect button
+            // Manual detect button with better error handling
             const detectBtn = document.getElementById('detect-mappings-btn');
             if (detectBtn) {
                 detectBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
+                    
+                    const meterUrl = elements.meterUrl.value.trim();
+                    if (!meterUrl) {
+                        showError('กรุณาใส่ลิงก์ Google Sheets ของไฟล์มิเตอร์ก่อน');
+                        elements.meterUrl.focus();
+                        return;
+                    }
+                    
+                    if (!meterUrl.includes('docs.google.com/spreadsheets')) {
+                        showError('ลิงก์ไม่ใช่ Google Sheets ที่ถูกต้อง กรุณาตรวจสอบ URL');
+                        elements.meterUrl.focus();
+                        return;
+                    }
+                    
+                    console.log('🚀 Manual detect button clicked, starting detection...');
                     detectMappingsFromUrls();
                 });
             }
