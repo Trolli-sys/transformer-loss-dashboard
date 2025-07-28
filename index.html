@@ -832,18 +832,65 @@
             hideElement(elements.errorMessage);
         }
 
+        function showSuccess(message) {
+            // Create success notification
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-full';
+            successDiv.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(successDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                successDiv.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                successDiv.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (successDiv.parentNode) {
+                        successDiv.parentNode.removeChild(successDiv);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
         // --- MODAL FUNCTIONS ---
         function showLoginModal() {
-            elements.loginError.textContent = '';
-            elements.loginModalOverlay.classList.add('show');
-            elements.loginModal.classList.add('show');
+            if (elements.loginError) elements.loginError.textContent = '';
+            hideElement(elements.loginError);
+            
+            // Reset form
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            
             showElement(elements.loginModalOverlay);
             showElement(elements.loginModal);
+            
+            // Add animation classes after showing
+            setTimeout(() => {
+                elements.loginModalOverlay.classList.add('show');
+                elements.loginModal.classList.add('show');
+            }, 10);
+            
+            // Focus on username field
+            setTimeout(() => {
+                document.getElementById('username').focus();
+            }, 100);
         }
 
         function hideLoginModal() {
             elements.loginModalOverlay.classList.remove('show');
             elements.loginModal.classList.remove('show');
+            
             setTimeout(() => {
                 hideElement(elements.loginModalOverlay);
                 hideElement(elements.loginModal);
@@ -1561,15 +1608,31 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
             // Modal events
-            elements.adminLoginBtn.addEventListener('click', showLoginModal);
-            elements.closeModalBtn.addEventListener('click', hideLoginModal);
-            elements.loginModalOverlay.addEventListener('click', hideLoginModal);
+            elements.adminLoginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                showLoginModal();
+            });
+            
+            elements.closeModalBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                hideLoginModal();
+            });
+            
+            elements.loginModalOverlay.addEventListener('click', (e) => {
+                if (e.target === elements.loginModalOverlay) {
+                    hideLoginModal();
+                }
+            });
 
             // Login form
             elements.loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
+                e.stopPropagation();
+                
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
                 
                 if (username === 'admin' && password === 'admin123') {
                     currentUser = { role: 'admin' };
@@ -1577,9 +1640,28 @@ ${results.sort((a, b) => b.lossPercent - a.lossPercent).slice(0, 3).map((r, i) =
                     renderAppForRole();
                     // Load saved mappings if available
                     loadSavedMappings();
+                    showSuccess('เข้าสู่ระบบสำเร็จ!');
                 } else {
-                    elements.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
-                    showElement(elements.loginError);
+                    const errorElement = document.getElementById('login-error');
+                    errorElement.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                    showElement(errorElement);
+                    
+                    // Clear form
+                    document.getElementById('username').value = '';
+                    document.getElementById('password').value = '';
+                    document.getElementById('username').focus();
+                }
+            });
+
+            // Prevent modal from closing when clicking inside
+            elements.loginModal.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !elements.loginModalOverlay.classList.contains('hidden')) {
+                    hideLoginModal();
                 }
             });
 
