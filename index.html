@@ -389,18 +389,19 @@
                                 ข้อมูลหม้อแปลง
                             </h3>
                             <input type="url" id="transformer-url" class="input-field" placeholder="วาง Google Sheets URL ของข้อมูลหม้อแปลง">
-                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                                <div class="flex">
-                                    <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-blue-700">
-                                            <strong>วิธีการ:</strong> เปิด Google Sheets → คลิกแท็บ "DATA_Process" → คัดลอก URL จากแถบที่อยู่
-                                        </p>
-                                    </div>
+                        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                            <div class="flex">
+                                <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="ml-3">
+                                    <p class="text-sm text-blue-700">
+                                        <strong>วิธีการ:</strong> เปิด Google Sheets → คลิกแท็บ "DATA_Process" → คัดลอก URL จากแถบที่อยู่<br>
+                                        <strong>โครงสร้างข้อมูล:</strong> ต้องมีคอลัมน์ วันที่, KWH_TOT, PF_TOT, P_TOT
+                                    </p>
                                 </div>
                             </div>
+                        </div>
                         </div>
 
                         <div class="space-y-6">
@@ -411,18 +412,19 @@
                                 ข้อมูลมิเตอร์
                             </h3>
                             <input type="url" id="meter-url" class="input-field" placeholder="วาง Google Sheets URL ของข้อมูลมิเตอร์">
-                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
-                                <div class="flex">
-                                    <svg class="w-5 h-5 text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-green-700">
-                                            <strong>วิธีการ:</strong> เปิด Google Sheets → เลือกแท็บที่มีข้อมูลมิเตอร์ → คัดลอก URL จากแถบที่อยู่
-                                        </p>
-                                    </div>
+                        <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                            <div class="flex">
+                                <svg class="w-5 h-5 text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <div class="ml-3">
+                                    <p class="text-sm text-green-700">
+                                        <strong>วิธีการ:</strong> เปิด Google Sheets → เลือกแท็บที่มีข้อมูลมิเตอร์ → คัดลอก URL จากแถบที่อยู่<br>
+                                        <strong>โครงสร้างข้อมูล:</strong> ต้องมีคอลัมน์ PEA Meter, หม้อแปลง, KWH_JAN, KWH_FEB, ..., KWH_DEC
+                                    </p>
                                 </div>
                             </div>
+                        </div>
                         </div>
                     </div>
 
@@ -470,7 +472,12 @@
                                     ตรวจสอบการจับคู่
                                 </button>
                             </div>
-                            <p class="text-blue-700 mb-4">ระบบจะอ่านการจับคู่หม้อแปลงและมิเตอร์จากไฟล์ข้อมูลโดยอัตโนมัติ</p>
+                            <p class="text-blue-700 mb-4">
+                                <strong>📊 การคำนวณ Loss:</strong><br>
+                                • <strong>หม้อแปลง:</strong> KWH_TOT(วันสิ้นสุด) - KWH_TOT(วันเริ่ม) = พลังงานจ่ายออก<br>
+                                • <strong>มิเตอร์:</strong> ผลรวม KWH_(เดือนที่เลือก) ของมิเตอร์ทั้งหมด = พลังงานรับเข้า<br>
+                                • <strong>Loss:</strong> พลังงานจ่ายออก - พลังงานรับเข้า = การสูญเสีย
+                            </p>
                             <div id="detected-mappings" class="space-y-3">
                                 <div class="text-blue-600 text-sm">🔗 ใส่ลิงก์ไฟล์มิเตอร์แล้วกดปุ่ม "ตรวจสอบการจับคู่"</div>
                             </div>
@@ -1239,54 +1246,102 @@
         }
 
         async function processTransformerData(transformerData, transformerId, startDate, endDate) {
+            console.log(`🔌 Processing transformer: ${transformerId}`);
+            
             const tDateKey = findKey(transformerData[0], ['Date', 'วันที่']);
             const tEnergyKey = findKey(transformerData[0], ['Energy_Output_kWh', 'KWH_TOT']);
 
             if (!tDateKey || !tEnergyKey) {
-                throw new Error(`ไม่พบคอลัมน์ที่จำเป็นในไฟล์หม้อแปลง สำหรับ ${transformerId}`);
+                throw new Error(`ไม่พบคอลัมน์ที่จำเป็นในไฟล์หม้อแปลง สำหรับ ${transformerId}\nต้องมี: Date/วันที่ และ KWH_TOT`);
             }
 
+            console.log(`📅 Using date column: ${tDateKey}, energy column: ${tEnergyKey}`);
+
             const sortedTrData = transformerData
-                .map(row => ({ ...row, parsedDate: parseDate(row[tDateKey]), kwh: parseFloat(row[tEnergyKey]) || 0 }))
+                .map(row => ({ 
+                    ...row, 
+                    parsedDate: parseDate(row[tDateKey]), 
+                    kwh: parseFloat(row[tEnergyKey]) || 0 
+                }))
                 .filter(row => row.parsedDate && !isNaN(row.kwh))
                 .sort((a, b) => a.parsedDate - b.parsedDate);
 
+            console.log(`📊 Sorted transformer data: ${sortedTrData.length} records`);
+
+            // Find the record closest to or before the end date
             const endRecord = sortedTrData.filter(row => row.parsedDate <= endDate).pop();
+            // Find the record closest to or before the start date
             const startRecord = sortedTrData.filter(row => row.parsedDate <= startDate).pop();
 
-            if (!endRecord || !startRecord) {
-                throw new Error(`ไม่พบข้อมูลในช่วงวันที่ที่กำหนดสำหรับหม้อแปลง ${transformerId}`);
+            if (!endRecord) {
+                throw new Error(`ไม่พบข้อมูล KWH_TOT ณ วันที่สิ้นสุด (${endDate.toISOString().split('T')[0]}) สำหรับหม้อแปลง ${transformerId}`);
+            }
+            if (!startRecord) {
+                throw new Error(`ไม่พบข้อมูล KWH_TOT ณ วันที่เริ่มต้น (${startDate.toISOString().split('T')[0]}) สำหรับหม้อแปลง ${transformerId}`);
             }
 
-            const energy = parseFloat(endRecord[tEnergyKey]) - parseFloat(startRecord[tEnergyKey]);
+            const startKwh = parseFloat(startRecord[tEnergyKey]) || 0;
+            const endKwh = parseFloat(endRecord[tEnergyKey]) || 0;
+            const energy = endKwh - startKwh;
+
+            console.log(`⚡ Transformer ${transformerId} calculation:`, {
+                startDate: startRecord[tDateKey],
+                endDate: endRecord[tDateKey],
+                startKwh: startKwh.toFixed(2),
+                endKwh: endKwh.toFixed(2),
+                energyDiff: energy.toFixed(2)
+            });
+
             if (isNaN(energy) || energy < 0) {
-                throw new Error(`การคำนวณพลังงานหม้อแปลง ${transformerId} ผิดพลาด`);
+                throw new Error(`การคำนวณพลังงานหม้อแปลง ${transformerId} ผิดพลาด\nKWH_TOT เริ่มต้น: ${startKwh}\nKWH_TOT สิ้นสุด: ${endKwh}\nผลต่าง: ${energy}\n(ผลต่างต้องเป็นบวก)`);
             }
 
             return { energy };
         }
 
         async function processMeterData(meterData, meterIds, selectedMonth, monthKeys) {
+            console.log(`📊 Processing ${meterIds.length} meters for month: ${monthKeys[selectedMonth]}`);
+            
             const mIdKey = findKey(meterData[0], ['Meter_ID', 'PEA Meter']);
             const meterEnergyKeyForMonth = findKey(meterData[0], [monthKeys[selectedMonth]]);
 
             if (!mIdKey || !meterEnergyKeyForMonth) {
-                throw new Error('ไม่พบคอลัมน์ที่จำเป็นในไฟล์มิเตอร์');
+                throw new Error(`ไม่พบคอลัมน์ที่จำเป็นในไฟล์มิเตอร์\nต้องมี: PEA Meter/Meter_ID และ ${monthKeys[selectedMonth]}`);
             }
+
+            console.log(`🔑 Using meter ID column: ${mIdKey}, energy column: ${meterEnergyKeyForMonth}`);
 
             const breakdown = [];
             let totalEnergy = 0;
+            let foundMeters = 0;
+            let missingMeters = [];
 
             for (const meterId of meterIds) {
-                const meterRecord = meterData.find(row => row[mIdKey] === meterId);
+                const meterRecord = meterData.find(row => row[mIdKey] && row[mIdKey].toString().trim() === meterId.toString().trim());
+                
                 if (meterRecord) {
                     const energy = parseFloat(meterRecord[meterEnergyKeyForMonth]) || 0;
                     breakdown.push({ meterId, energy });
                     totalEnergy += energy;
+                    foundMeters++;
+                    
+                    console.log(`🔌 Meter ${meterId}: ${energy.toFixed(2)} kWh`);
                 } else {
-                    console.warn(`ไม่พบข้อมูลสำหรับมิเตอร์ ${meterId}`);
+                    console.warn(`⚠️ ไม่พบข้อมูลสำหรับมิเตอร์ ${meterId}`);
                     breakdown.push({ meterId, energy: 0 });
+                    missingMeters.push(meterId);
                 }
+            }
+
+            console.log(`📈 Meter summary:`, {
+                totalMeters: meterIds.length,
+                foundMeters,
+                missingMeters: missingMeters.length,
+                totalEnergy: totalEnergy.toFixed(2)
+            });
+
+            if (missingMeters.length > 0) {
+                console.warn(`⚠️ Missing meters: ${missingMeters.join(', ')}`);
             }
 
             return { totalEnergy, breakdown };
