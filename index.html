@@ -133,7 +133,7 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        .input-field {
+        .input-field, .textarea-field {
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(229, 231, 235, 0.5);
             border-radius: 12px;
@@ -143,11 +143,16 @@
             width: 100%;
         }
 
-        .input-field:focus {
+        .input-field:focus, .textarea-field:focus {
             outline: none;
             border-color: var(--primary-500);
             background: white;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .textarea-field {
+            min-height: 120px;
+            resize: vertical;
         }
 
         .status-indicator {
@@ -297,6 +302,24 @@
             padding: 1.5rem;
             border: 1px solid rgba(229, 231, 235, 0.3);
         }
+        
+        .admin-tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: var(--gray-500);
+        }
+        .admin-tab:hover {
+            color: var(--primary-500);
+        }
+        .admin-tab.active {
+            color: var(--primary-600);
+            border-bottom-color: var(--primary-600);
+            font-weight: 700;
+        }
+
 
         /* Responsive Design */
         @media (max-width: 768px) {
@@ -367,6 +390,102 @@
         </div>
     </div>
 
+    <!-- User Edit Report Modal -->
+    <div id="edit-report-modal-overlay" class="modal-overlay hidden">
+        <div id="edit-report-modal" class="modal-content w-full max-w-2xl mx-4">
+            <form id="edit-report-form" class="glass-card p-8 relative">
+                 <button type="button" id="close-edit-report-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">บันทึกรายงานการแก้ไขหม้อแปลง</h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="report-name" class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-สกุล ผู้รายงาน</label>
+                            <input type="text" id="report-name" class="input-field" placeholder="เช่น นายสมชาย ใจดี" required>
+                        </div>
+                        <div>
+                            <label for="report-position" class="block text-sm font-medium text-gray-700 mb-2">ตำแหน่ง</label>
+                            <input type="text" id="report-position" class="input-field" placeholder="เช่น วิศวกรไฟฟ้า" required>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="report-affiliation" class="block text-sm font-medium text-gray-700 mb-2">สังกัด</label>
+                        <input type="text" id="report-affiliation" class="input-field" placeholder="เช่น การไฟฟ้าส่วนภูมิภาคยะลา" required>
+                    </div>
+                    <div>
+                        <label for="report-details" class="block text-sm font-medium text-gray-700 mb-2">รายละเอียดการแก้ไข</label>
+                        <textarea id="report-details" class="textarea-field" placeholder="อธิบายการดำเนินการแก้ไขปัญหาตามบทวิเคราะห์ของ AI..." required></textarea>
+                    </div>
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="btn-primary">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                            ส่งรายงาน
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin View Report Details Modal -->
+    <div id="report-details-modal-overlay" class="modal-overlay hidden">
+        <div id="report-details-modal" class="modal-content w-full max-w-3xl mx-4">
+            <div class="glass-card p-8 relative max-h-[90vh] overflow-y-auto">
+                <button type="button" id="close-report-details-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">รายละเอียดรายงานการแก้ไข</h2>
+                <div class="space-y-6">
+                    <!-- User Report Section -->
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-3">ข้อมูลจากผู้ใช้</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div><strong class="text-gray-500">ผู้รายงาน:</strong> <span id="details-reporter-name"></span></div>
+                            <div><strong class="text-gray-500">ตำแหน่ง:</strong> <span id="details-reporter-position"></span></div>
+                            <div><strong class="text-gray-500">สังกัด:</strong> <span id="details-reporter-affiliation"></span></div>
+                            <div><strong class="text-gray-500">หม้อแปลง:</strong> <span id="details-transformer-id"></span></div>
+                            <div><strong class="text-gray-500">การไฟฟ้า:</strong> <span id="details-authority"></span></div>
+                            <div><strong class="text-gray-500">วันที่รายงาน:</strong> <span id="details-created-at"></span></div>
+                        </div>
+                        <div class="mt-4">
+                            <strong class="text-gray-500 text-sm">รายละเอียดการแก้ไข:</strong>
+                            <p class="mt-1 text-gray-700 bg-white p-3 rounded-md" id="details-report-details"></p>
+                        </div>
+                    </div>
+
+                    <!-- Admin Suggestion Section -->
+                    <div class="p-4 border rounded-lg">
+                        <h3 class="font-semibold text-lg text-gray-800 mb-3">ข้อเสนอแนะจาก Admin</h3>
+                        <div>
+                            <label for="admin-suggestions" class="block text-sm font-medium text-gray-700 mb-2">เพิ่ม/แก้ไขข้อเสนอแนะ</label>
+                            <textarea id="admin-suggestions" class="textarea-field" placeholder="เพิ่มความคิดเห็นหรือข้อเสนอแนะเพิ่มเติมที่นี่..."></textarea>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button id="save-admin-suggestion-btn" class="btn-primary">บันทึกข้อเสนอแนะ</button>
+                        </div>
+                    </div>
+
+                    <!-- AI Analysis of Report -->
+                    <div class="p-4 border rounded-lg">
+                         <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-semibold text-lg text-gray-800">บทวิเคราะห์รายงานโดย AI</h3>
+                            <button id="analyze-report-btn" class="btn-secondary">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                                <span>วิเคราะห์</span>
+                            </button>
+                        </div>
+                        <div id="report-ai-loader" class="flex flex-col items-center justify-center h-24 hidden">
+                            <div class="ai-spinner mb-2"></div>
+                            <p class="text-gray-500 text-sm">AI กำลังวิเคราะห์รายงาน...</p>
+                        </div>
+                        <div id="report-ai-analysis-content" class="prose max-w-none text-gray-600"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Main Application -->
     <div id="app-container" class="min-h-screen">
@@ -409,169 +528,211 @@
         </header>
 
         <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            <!-- Admin Configuration Panel -->
-            <section id="admin-config-section" class="admin-only hidden fade-in">
+            <!-- Admin Panel (with Tabs) -->
+            <section id="admin-panel" class="admin-only hidden fade-in">
                 <div class="glass-card p-8">
-                    <div class="flex items-center space-x-3 mb-6">
-                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl font-bold text-gray-900">ตั้งค่าระบบและเชื่อมต่อข้อมูล</h2>
+                    <!-- Admin Tabs Navigation -->
+                    <div class="border-b border-gray-200 mb-6">
+                        <nav class="flex space-x-4" aria-label="Tabs">
+                            <button id="admin-config-tab" class="admin-tab active">
+                                ตั้งค่าและคำนวณ
+                            </button>
+                            <button id="admin-reports-tab" class="admin-tab">
+                                รายงานการแก้ไขจากผู้ใช้
+                            </button>
+                        </nav>
                     </div>
 
-                    <!-- Data Source Configuration -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                        <div class="space-y-6">
-                            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                                <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    <!-- Admin Configuration Section -->
+                    <div id="admin-config-section">
+                        <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
-                                ข้อมูลหม้อแปลง
-                            </h3>
-                            <input type="url" id="transformer-url" class="input-field" placeholder="วาง Google Sheets URL ของข้อมูลหม้อแปลง">
-                            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                                <div class="flex">
-                                    <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900">ตั้งค่าระบบและเชื่อมต่อข้อมูล</h2>
+                        </div>
+                        <!-- Data Source Configuration -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                            <div class="space-y-6">
+                                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                                    <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                     </svg>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-blue-700">
-                                            <strong>วิธีการ:</strong> เปิด Google Sheets → คลิกแท็บ "DATA_Process" → คัดลอก URL จากแถบที่อยู่<br>
-                                            <strong>โครงสร้างข้อมูล:</strong> ต้องมีคอลัมน์ วันที่, KWH_TOT, PF_TOT, P_TOT
-                                        </p>
+                                    ข้อมูลหม้อแปลง
+                                </h3>
+                                <input type="url" id="transformer-url" class="input-field" placeholder="วาง Google Sheets URL ของข้อมูลหม้อแปลง">
+                                <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+                                    <div class="flex">
+                                        <svg class="w-5 h-5 text-blue-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-blue-700">
+                                                <strong>วิธีการ:</strong> เปิด Google Sheets → คลิกแท็บ "DATA_Process" → คัดลอก URL จากแถบที่อยู่<br>
+                                                <strong>โครงสร้างข้อมูล:</strong> ต้องมีคอลัมน์ วันที่, KWH_TOT, PF_TOT, P_TOT
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                                    <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                                    </svg>
+                                    ข้อมูลมิเตอร์
+                                </h3>
+                                <input type="url" id="meter-url" class="input-field" placeholder="วาง Google Sheets URL ของข้อมูลมิเตอร์">
+                                <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                                    <div class="flex">
+                                        <svg class="w-5 h-5 text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-green-700">
+                                                <strong>วิธีการ:</strong> เปิด Google Sheets → เลือกแท็บที่มีข้อมูลมิเตอร์ → คัดลอก URL จากแถบที่อยู่<br>
+                                                <strong>โครงสร้างข้อมูล:</strong> ต้องมีคอลัมน์ PEA Meter, หม้อแปลง, KWH_JAN, KWH_FEB, ..., KWH_DEC
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="space-y-6">
-                            <h3 class="text-lg font-semibold text-gray-800 flex items-center">
-                                <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        <!-- Analysis Parameters -->
+                        <div class="border-t border-gray-200 pt-8">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                                <svg class="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
                                 </svg>
-                                ข้อมูลมิเตอร์
+                                พารามิเตอร์การวิเคราะห์
                             </h3>
-                            <input type="url" id="meter-url" class="input-field" placeholder="วาง Google Sheets URL ของข้อมูลมิเตอร์">
-                            <div class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg">
-                                <div class="flex">
-                                    <svg class="w-5 h-5 text-green-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-green-700">
-                                            <strong>วิธีการ:</strong> เปิด Google Sheets → เลือกแท็บที่มีข้อมูลมิเตอร์ → คัดลอก URL จากแถบที่อยู่<br>
-                                            <strong>โครงสร้างข้อมูล:</strong> ต้องมีคอลัมน์ PEA Meter, หม้อแปลง, KWH_JAN, KWH_FEB, ..., KWH_DEC
-                                        </p>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                <div>
+                                    <label for="authority-input" class="block text-sm font-medium text-gray-700 mb-2">การไฟฟ้าที่รับผิดชอบ</label>
+                                    <input type="text" id="authority-input" class="input-field" placeholder="เช่น ยะลา, สงขลา">
+                                </div>
+                                <div>
+                                    <label for="start-date-input" class="block text-sm font-medium text-gray-700 mb-2">วันที่เริ่มต้น</label>
+                                    <input type="date" id="start-date-input" class="input-field">
+                                </div>
+                                <div>
+                                    <label for="end-date-input" class="block text-sm font-medium text-gray-700 mb-2">วันที่สิ้นสุด</label>
+                                    <input type="date" id="end-date-input" class="input-field">
+                                </div>
+                                <div>
+                                    <label for="month-input" class="block text-sm font-medium text-gray-700 mb-2">เดือนข้อมูลมิเตอร์</label>
+                                    <input type="month" id="month-input" class="input-field">
+                                </div>
+                            </div>
+
+                            <!-- Auto-detected Mapping Display -->
+                            <div class="bg-blue-50 rounded-xl p-6 mb-8">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center">
+                                        <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <h4 class="text-lg font-semibold text-blue-800">การจับคู่อัตโนมัติ</h4>
+                                    </div>
+                                    <button id="detect-mappings-btn" class="btn-primary text-sm" disabled>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                        </svg>
+                                        <span id="detect-btn-text">ใส่ลิงก์มิเตอร์ก่อน</span>
+                                    </button>
+                                </div>
+                                <p class="text-blue-700 mb-4">
+                                    <strong>📊 การคำนวณ Loss:</strong><br>
+                                    • <strong>หม้อแปลง:</strong> KWH_TOT(วันสิ้นสุด) - KWH_TOT(วันเริ่ม) = พลังงานจ่ายออก<br>
+                                    • <strong>มิเตอร์:</strong> ผลรวม KWH_(เดือนที่เลือก) ของมิเตอร์ทั้งหมด = พลังงานรับเข้า<br>
+                                    • <strong>Loss:</strong> พลังงานจ่ายออก - พลังงานรับเข้า = การสูญเสีย
+                                </p>
+
+                                <!-- URL Status Indicator -->
+                                <div class="mb-4 p-3 bg-white rounded-lg border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium text-blue-800">สถานะลิงก์ไฟล์:</span>
+                                        <div class="flex space-x-4 text-xs">
+                                            <span id="transformer-url-status" class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                                🔌 หม้อแปลง: ยังไม่ได้ใส่
+                                            </span>
+                                            <span id="meter-url-status" class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                                                📊 มิเตอร์: ยังไม่ได้ใส่
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="detected-mappings" class="space-y-3">
+                                    <div class="text-blue-600 text-sm flex items-center">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        ใส่ลิงก์ Google Sheets ของไฟล์มิเตอร์ข้างบน แล้วกดปุ่ม "ตรวจสอบการจับคู่"
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Analysis Parameters -->
-                    <div class="border-t border-gray-200 pt-8">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
-                            <svg class="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"></path>
-                            </svg>
-                            พารามิเตอร์การวิเคราะห์
-                        </h3>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                            <div>
-                                <label for="authority-input" class="block text-sm font-medium text-gray-700 mb-2">การไฟฟ้าที่รับผิดชอบ</label>
-                                <input type="text" id="authority-input" class="input-field" placeholder="เช่น ยะลา, สงขลา">
-                            </div>
-                            <div>
-                                <label for="start-date-input" class="block text-sm font-medium text-gray-700 mb-2">วันที่เริ่มต้น</label>
-                                <input type="date" id="start-date-input" class="input-field">
-                            </div>
-                            <div>
-                                <label for="end-date-input" class="block text-sm font-medium text-gray-700 mb-2">วันที่สิ้นสุด</label>
-                                <input type="date" id="end-date-input" class="input-field">
-                            </div>
-                            <div>
-                                <label for="month-input" class="block text-sm font-medium text-gray-700 mb-2">เดือนข้อมูลมิเตอร์</label>
-                                <input type="month" id="month-input" class="input-field">
-                            </div>
-                        </div>
-
-                        <!-- Auto-detected Mapping Display -->
-                        <div class="bg-blue-50 rounded-xl p-6 mb-8">
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center">
-                                    <svg class="w-6 h-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            <div class="flex justify-end space-x-4">
+                                 <button id="delete-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 hidden">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    <span>ลบข้อมูลที่แสดง</span>
+                                </button>
+                                <button id="calculate-btn" class="btn-primary" disabled>
+                                    <svg id="loading-spinner" class="spinner hidden" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    <h4 class="text-lg font-semibold text-blue-800">การจับคู่อัตโนมัติ</h4>
-                                </div>
-                                <button id="detect-mappings-btn" class="btn-primary text-sm" disabled>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                    </svg>
-                                    <span id="detect-btn-text">ใส่ลิงก์มิเตอร์ก่อน</span>
+                                    <span>คำนวณและบันทึกข้อมูล</span>
                                 </button>
                             </div>
-                            <p class="text-blue-700 mb-4">
-                                <strong>📊 การคำนวณ Loss:</strong><br>
-                                • <strong>หม้อแปลง:</strong> KWH_TOT(วันสิ้นสุด) - KWH_TOT(วันเริ่ม) = พลังงานจ่ายออก<br>
-                                • <strong>มิเตอร์:</strong> ผลรวม KWH_(เดือนที่เลือก) ของมิเตอร์ทั้งหมด = พลังงานรับเข้า<br>
-                                • <strong>Loss:</strong> พลังงานจ่ายออก - พลังงานรับเข้า = การสูญเสีย
-                            </p>
 
-                            <!-- URL Status Indicator -->
-                            <div class="mb-4 p-3 bg-white rounded-lg border border-blue-200">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium text-blue-800">สถานะลิงก์ไฟล์:</span>
-                                    <div class="flex space-x-4 text-xs">
-                                        <span id="transformer-url-status" class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                                            🔌 หม้อแปลง: ยังไม่ได้ใส่
-                                        </span>
-                                        <span id="meter-url-status" class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                                            📊 มิเตอร์: ยังไม่ได้ใส่
-                                        </span>
+                            <div id="error-message" class="mt-4 hidden">
+                                <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+                                    <div class="flex">
+                                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <div class="ml-3">
+                                            <p class="text-sm text-red-700" id="error-text"></p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div id="detected-mappings" class="space-y-3">
-                                <div class="text-blue-600 text-sm flex items-center">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    ใส่ลิงก์ Google Sheets ของไฟล์มิเตอร์ข้างบน แล้วกดปุ่ม "ตรวจสอบการจับคู่"
-                                </div>
-                            </div>
                         </div>
+                    </div>
 
-                        <div class="flex justify-end space-x-4">
-                             <button id="delete-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 hidden">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                <span>ลบข้อมูลที่แสดง</span>
-                            </button>
-                            <button id="calculate-btn" class="btn-primary" disabled>
-                                <svg id="loading-spinner" class="spinner hidden" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span>คำนวณและบันทึกข้อมูล</span>
-                            </button>
-                        </div>
-
-                        <div id="error-message" class="mt-4 hidden">
-                            <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
-                                <div class="flex">
-                                    <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <div class="ml-3">
-                                        <p class="text-sm text-red-700" id="error-text"></p>
-                                    </div>
-                                </div>
+                    <!-- Admin Reports Section -->
+                    <div id="admin-reports-section" class="hidden">
+                         <div class="flex items-center space-x-3 mb-6">
+                            <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
                             </div>
+                            <h2 class="text-2xl font-bold text-gray-900">รายงานการแก้ไขจากผู้ใช้</h2>
+                        </div>
+                        <div id="reports-list-container" class="overflow-x-auto">
+                           <!-- Reports will be dynamically loaded here -->
+                           <p id="no-reports-message" class="text-center text-gray-500 py-8">ยังไม่มีรายงานการแก้ไข</p>
+                           <table class="data-table w-full hidden">
+                               <thead>
+                                   <tr>
+                                       <th>วันที่รายงาน</th>
+                                       <th>ผู้รายงาน</th>
+                                       <th>สังกัด</th>
+                                       <th>หม้อแปลง</th>
+                                       <th>การดำเนินการ</th>
+                                   </tr>
+                               </thead>
+                               <tbody id="reports-table-body">
+                                   <!-- report rows -->
+                               </tbody>
+                           </table>
                         </div>
                     </div>
                 </div>
@@ -748,7 +909,11 @@
                         </div>
 
                         <div id="ai-analysis-content" class="prose max-w-none text-gray-600 hidden"></div>
-                        <button id="generate-action-plan-btn" class="btn-primary mt-4 hidden w-full">✨ สร้างแผนปฏิบัติการ</button>
+                        
+                        <div id="action-buttons-container" class="mt-4 space-y-2 hidden">
+                            <button id="generate-action-plan-btn" class="btn-primary w-full">✨ สร้างแผนปฏิบัติการ</button>
+                            <button id="show-edit-report-modal-btn" class="btn-secondary w-full">📝 บันทึกการแก้ไขตามบทวิเคราะห์</button>
+                        </div>
 
                         <div id="ai-analysis-error" class="hidden">
                             <div class="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -851,6 +1016,7 @@
         let currentDataSummary = ''; // To store data summary for action plan
         let supabase;
         let allAnalysisData = {}; // Global cache for Supabase data
+        let currentReportId = null; // To track which report is being viewed/edited by admin
 
         // --- SUPABASE CONFIG ---
         // IMPORTANT: Replace with your Supabase Project URL and Anon Key
@@ -875,10 +1041,44 @@
             confirmModalCancelBtn: document.getElementById('confirm-modal-cancel-btn'),
             confirmModalConfirmBtn: document.getElementById('confirm-modal-confirm-btn'),
 
+            // Edit Report Modal
+            editReportModalOverlay: document.getElementById('edit-report-modal-overlay'),
+            editReportModal: document.getElementById('edit-report-modal'),
+            editReportForm: document.getElementById('edit-report-form'),
+            closeEditReportModalBtn: document.getElementById('close-edit-report-modal-btn'),
+            showEditReportModalBtn: document.getElementById('show-edit-report-modal-btn'),
+
+            // Report Details Modal
+            reportDetailsModalOverlay: document.getElementById('report-details-modal-overlay'),
+            reportDetailsModal: document.getElementById('report-details-modal'),
+            closeReportDetailsModalBtn: document.getElementById('close-report-details-modal-btn'),
+            detailsReporterName: document.getElementById('details-reporter-name'),
+            detailsReporterPosition: document.getElementById('details-reporter-position'),
+            detailsReporterAffiliation: document.getElementById('details-reporter-affiliation'),
+            detailsTransformerId: document.getElementById('details-transformer-id'),
+            detailsAuthority: document.getElementById('details-authority'),
+            detailsCreatedAt: document.getElementById('details-created-at'),
+            detailsReportDetails: document.getElementById('details-report-details'),
+            adminSuggestions: document.getElementById('admin-suggestions'),
+            saveAdminSuggestionBtn: document.getElementById('save-admin-suggestion-btn'),
+            analyzeReportBtn: document.getElementById('analyze-report-btn'),
+            reportAiLoader: document.getElementById('report-ai-loader'),
+            reportAiAnalysisContent: document.getElementById('report-ai-analysis-content'),
+
             // Auth elements
             adminLoginBtn: document.getElementById('admin-login-btn'),
             logoutBtn: document.getElementById('logout-btn'),
             userRoleDisplay: document.getElementById('user-role-display'),
+
+            // Admin Panel & Tabs
+            adminPanel: document.getElementById('admin-panel'),
+            adminConfigTab: document.getElementById('admin-config-tab'),
+            adminReportsTab: document.getElementById('admin-reports-tab'),
+            adminConfigSection: document.getElementById('admin-config-section'),
+            adminReportsSection: document.getElementById('admin-reports-section'),
+            reportsListContainer: document.getElementById('reports-list-container'),
+            reportsTableBody: document.getElementById('reports-table-body'),
+            noReportsMessage: document.getElementById('no-reports-message'),
 
             // Input elements
             transformerUrl: document.getElementById('transformer-url'),
@@ -922,6 +1122,7 @@
             aiContent: document.getElementById('ai-analysis-content'),
             aiError: document.getElementById('ai-analysis-error'),
             aiErrorText: document.getElementById('ai-error-text'),
+            actionButtonsContainer: document.getElementById('action-buttons-container'),
             generateActionPlanBtn: document.getElementById('generate-action-plan-btn'),
             
             // Action Plan elements
@@ -988,34 +1189,64 @@
         }
 
         // --- MODAL FUNCTIONS ---
+        function showModal(overlay, modal) {
+            showElement(overlay);
+            showElement(modal);
+            setTimeout(() => {
+                overlay.classList.add('show');
+                modal.classList.add('show');
+            }, 10);
+        }
+
+        function hideModal(overlay, modal) {
+            overlay.classList.remove('show');
+            modal.classList.remove('show');
+            setTimeout(() => {
+                hideElement(overlay);
+                hideElement(modal);
+            }, 300);
+        }
+        
         function showLoginModal() {
             if (elements.loginError) elements.loginError.textContent = '';
             hideElement(elements.loginError);
-
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
-
-            showElement(elements.loginModalOverlay);
-            showElement(elements.loginModal);
-
-            setTimeout(() => {
-                elements.loginModalOverlay.classList.add('show');
-                elements.loginModal.classList.add('show');
-            }, 10);
-
-            setTimeout(() => {
-                document.getElementById('username').focus();
-            }, 100);
+            showModal(elements.loginModalOverlay, elements.loginModal);
+            setTimeout(() => document.getElementById('username').focus(), 100);
         }
 
         function hideLoginModal() {
-            elements.loginModalOverlay.classList.remove('show');
-            elements.loginModal.classList.remove('show');
+            hideModal(elements.loginModalOverlay, elements.loginModal);
+        }
 
-            setTimeout(() => {
-                hideElement(elements.loginModalOverlay);
-                hideElement(elements.loginModal);
-            }, 300);
+        function showEditReportModal() {
+            elements.editReportForm.reset();
+            showModal(elements.editReportModalOverlay, elements.editReportModal);
+        }
+
+        function hideEditReportModal() {
+            hideModal(elements.editReportModalOverlay, elements.editReportModal);
+        }
+
+        async function showReportDetailsModal(report) {
+            currentReportId = report.id;
+            elements.detailsReporterName.textContent = report.reporter_name;
+            elements.detailsReporterPosition.textContent = report.reporter_position;
+            elements.detailsReporterAffiliation.textContent = report.reporter_affiliation;
+            elements.detailsTransformerId.textContent = report.transformer_id;
+            elements.detailsAuthority.textContent = report.authority;
+            elements.detailsCreatedAt.textContent = new Date(report.created_at).toLocaleString('th-TH');
+            elements.detailsReportDetails.textContent = report.report_details;
+            elements.adminSuggestions.value = report.admin_suggestions || '';
+            elements.reportAiAnalysisContent.innerHTML = report.ai_report_analysis ? marked.parse(report.ai_report_analysis) : '<p class="text-gray-500">ยังไม่มีการวิเคราะห์รายงานนี้</p>';
+            hideElement(elements.reportAiLoader);
+            showModal(elements.reportDetailsModalOverlay, elements.reportDetailsModal);
+        }
+
+        function hideReportDetailsModal() {
+            hideModal(elements.reportDetailsModalOverlay, elements.reportDetailsModal);
+            currentReportId = null;
         }
         
         function showConfirmModal({ title, text, onConfirm }) {
@@ -1028,21 +1259,12 @@
                 elements.confirmModalConfirmBtn.removeEventListener('click', confirmHandler);
             };
             
-            elements.confirmModalConfirmBtn.addEventListener('click', confirmHandler);
-
-            showElement(elements.confirmModalOverlay);
-            setTimeout(() => {
-                elements.confirmModalOverlay.classList.add('show');
-                elements.confirmModal.classList.add('show');
-            }, 10);
+            elements.confirmModalConfirmBtn.addEventListener('click', confirmHandler, { once: true });
+            showModal(elements.confirmModalOverlay, elements.confirmModal);
         }
 
         function hideConfirmModal() {
-            elements.confirmModalOverlay.classList.remove('show');
-            elements.confirmModal.classList.remove('show');
-            setTimeout(() => {
-                hideElement(elements.confirmModalOverlay);
-            }, 300);
+            hideModal(elements.confirmModalOverlay, elements.confirmModal);
         }
 
 
@@ -1053,6 +1275,7 @@
 
             toggleElement(elements.adminLoginBtn, !isAdmin);
             toggleElement(elements.logoutBtn, isAdmin);
+            toggleElement(elements.adminPanel, isAdmin);
 
             document.querySelectorAll('.admin-only').forEach(el =>
                 toggleElement(el, isAdmin)
@@ -1106,12 +1329,12 @@
                 elements.viewAuthoritySelect.value = latestAuthority;
                 
                 populateTransformerSelector(allAnalysisData, latestAuthority);
-                const transformers = Object.keys(allAnalysisData[latestAuthority]).sort();
+                const transformers = Object.keys(allAnalysisData[latestAuthority] || {}).sort();
                 const latestTransformer = transformers[transformers.length - 1];
                 elements.viewTransformerSelect.value = latestTransformer;
 
                 populateMonthSelector(allAnalysisData, latestAuthority, latestTransformer);
-                const months = Object.keys(allAnalysisData[latestAuthority][latestTransformer]).sort();
+                const months = Object.keys(allAnalysisData[latestAuthority]?.[latestTransformer] || {}).sort();
                 const latestMonth = months[months.length - 1];
                 elements.viewMonthSelect.value = latestMonth;
                 
@@ -1387,7 +1610,8 @@
             console.log(`📊 Sorted transformer data: ${sortedTrData.length} records`);
 
             const endRecord = sortedTrData.filter(row => row.parsedDate <= endDate).pop();
-            const startRecord = sortedTrData.filter(row => row.parsedDate <= startDate).pop();
+            const startRecord = sortedTrData.filter(row => row.parsedDate < startDate).pop() || sortedTrData.find(row => row.parsedDate >= startDate);
+
 
             if (!endRecord) {
                 throw new Error(`ไม่พบข้อมูล KWH_TOT ณ วันที่สิ้นสุด (${endDate.toISOString().split('T')[0]}) สำหรับหม้อแปลง ${transformerId}`);
@@ -1409,7 +1633,7 @@
             });
 
             if (isNaN(energy) || energy < 0) {
-                throw new Error(`การคำนวณพลังงานหม้อแปลง ${transformerId} ผิดพลาด\nKWH_TOT เริ่มต้น: ${startKwh}\nKWH_TOT สิ้นสุด: ${endKwh}\nผลต่าง: ${energy}\n(ผลต่างต้องเป็นบวก)`);
+                console.warn(`การคำนวณพลังงานหม้อแปลง ${transformerId} ได้ผลลัพธ์ติดลบหรือผิดพลาด`, {startKwh, endKwh, energy});
             }
 
             return {
@@ -1518,7 +1742,7 @@
         async function displayResults(data) {
             // Hide action plan from previous results
             hideElement(elements.actionPlanSection);
-            hideElement(elements.generateActionPlanBtn);
+            hideElement(elements.actionButtonsContainer);
             
             elements.kpiTransformerEnergy.textContent = data.totalTransformerEnergy.toLocaleString('en-US', {
                 maximumFractionDigits: 2
@@ -1747,11 +1971,45 @@
         }
 
         // --- AI ANALYSIS & ACTION PLAN (GEMINI API) ---
+        async function callGeminiAPI(prompt) {
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
+            const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                 const errorBody = await response.text();
+                 console.error("API Error Body:", errorBody);
+                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text;
+            } else {
+                console.error("Unexpected AI response structure:", result);
+                if(result.promptFeedback && result.promptFeedback.blockReason){
+                    throw new Error(`AI request blocked: ${result.promptFeedback.blockReason}`);
+                }
+                throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
+            }
+        }
+
         async function getAiAnalysis(results, avgLossPercent) {
             showElement(elements.aiLoader);
             hideElement(elements.aiContent);
             hideElement(elements.aiError);
-            hideElement(elements.generateActionPlanBtn);
+            hideElement(elements.actionButtonsContainer);
             hideElement(elements.actionPlanSection);
 
             currentDataSummary = results.map(r =>
@@ -1774,38 +2032,10 @@ Loss เฉลี่ยรวม: ${avgLossPercent.toFixed(2)}%
 ใช้ภาษาไทย, สรุปให้กระชับ และจัดรูปแบบด้วย Markdown`;
 
             try {
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-                const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ"; 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    if (response.status === 403) {
-                         throw new Error(`API Error 403: Forbidden. โปรดตรวจสอบว่า API Key ของคุณถูกต้องและมีสิทธิ์เข้าถึง`);
-                    }
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    currentAnalysisText = result.candidates[0].content.parts[0].text;
-                    elements.aiContent.innerHTML = marked.parse(currentAnalysisText);
-                    showElement(elements.aiContent);
-                    showElement(elements.generateActionPlanBtn);
-                } else {
-                    throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
-                }
+                currentAnalysisText = await callGeminiAPI(prompt);
+                elements.aiContent.innerHTML = marked.parse(currentAnalysisText);
+                showElement(elements.aiContent);
+                showElement(elements.actionButtonsContainer);
             } catch (error) {
                 console.error("AI Analysis Error:", error);
                 elements.aiErrorText.textContent = `เกิดข้อผิดพลาดในการวิเคราะห์: ${error.message}`;
@@ -1829,35 +2059,9 @@ ${currentAnalysisText}
 สร้าง "แผนปฏิบัติการ" (Action Plan) ที่ชัดเจนในรูปแบบตาราง Markdown สำหรับทีมช่างไฟฟ้า โดยมีคอลัมน์: "งานที่ต้องทำ", "หม้อแปลงเป้าหมาย", และ "ความสำคัญ (สูง/กลาง/ต่ำ)"`;
 
             try {
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-                const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    if (response.status === 403) {
-                         throw new Error(`API Error 403: Forbidden. โปรดตรวจสอบว่า API Key ของคุณถูกต้องและมีสิทธิ์เข้าถึง`);
-                    }
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0) {
-                    const actionPlanText = result.candidates[0].content.parts[0].text;
-                    elements.actionPlanContent.innerHTML = marked.parse(actionPlanText);
-                    showElement(elements.actionPlanContent);
-                } else {
-                    throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
-                }
+                const actionPlanText = await callGeminiAPI(prompt);
+                elements.actionPlanContent.innerHTML = marked.parse(actionPlanText);
+                showElement(elements.actionPlanContent);
             } catch (error) {
                 console.error("Action Plan Error:", error);
                 elements.actionPlanErrorText.textContent = `เกิดข้อผิดพลาดในการสร้างแผน: ${error.message}`;
@@ -1953,9 +2157,9 @@ ${currentAnalysisText}
                     console.log(`Deleting from Supabase with id: ${docId}`);
                     try {
                         const { error } = await supabase
-                            .from('analysis_data')
+                            .from('analysis')
                             .delete()
-                            .eq('id', docId);
+                            .eq('doc_id', docId);
 
                         if (error) throw error;
                         
@@ -2043,6 +2247,129 @@ ${currentAnalysisText}
             } finally {
                 detectBtn.disabled = false;
                 if (detectBtnText) detectBtnText.textContent = 'ตรวจสอบการจับคู่';
+            }
+        }
+
+        // --- NEW REPORTING FUNCTIONS ---
+        async function handleSaveReport(event) {
+            event.preventDefault();
+            const formData = new FormData(elements.editReportForm);
+            const reportData = {
+                reporter_name: document.getElementById('report-name').value,
+                reporter_position: document.getElementById('report-position').value,
+                reporter_affiliation: document.getElementById('report-affiliation').value,
+                report_details: document.getElementById('report-details').value,
+                authority: elements.viewAuthoritySelect.value,
+                transformer_id: elements.viewTransformerSelect.value,
+                month: elements.viewMonthSelect.value,
+                analysis_doc_id: `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`
+            };
+
+            if (!reportData.reporter_name || !reportData.report_details) {
+                showError("กรุณากรอกชื่อและรายละเอียดการแก้ไข");
+                return;
+            }
+
+            try {
+                const { error } = await supabase.from('edit_reports').insert([reportData]);
+                if (error) throw error;
+                showSuccess("บันทึกรายงานการแก้ไขสำเร็จแล้ว");
+                hideEditReportModal();
+            } catch (error) {
+                console.error("Error saving report:", error);
+                showError(`เกิดข้อผิดพลาดในการบันทึกรายงาน: ${error.message}`);
+            }
+        }
+        
+        async function fetchAndDisplayReports() {
+            const { data: reports, error } = await supabase
+                .from('edit_reports')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("Error fetching reports:", error);
+                elements.reportsListContainer.innerHTML = `<p class="text-red-500">ไม่สามารถโหลดรายงานได้</p>`;
+                return;
+            }
+
+            if (reports && reports.length > 0) {
+                hideElement(elements.noReportsMessage);
+                showElement(elements.reportsListContainer.querySelector('.data-table'));
+                elements.reportsTableBody.innerHTML = '';
+                reports.forEach(report => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(report.created_at).toLocaleDateString('th-TH')}</td>
+                        <td>${report.reporter_name}</td>
+                        <td>${report.reporter_affiliation}</td>
+                        <td>${report.transformer_id}</td>
+                        <td>
+                            <button class="btn-secondary text-sm view-details-btn">ดูรายละเอียด</button>
+                        </td>
+                    `;
+                    row.querySelector('.view-details-btn').addEventListener('click', () => showReportDetailsModal(report));
+                    elements.reportsTableBody.appendChild(row);
+                });
+            } else {
+                showElement(elements.noReportsMessage);
+                hideElement(elements.reportsListContainer.querySelector('.data-table'));
+            }
+        }
+
+        async function handleSaveAdminSuggestion() {
+            if (!currentReportId) return;
+            const suggestions = elements.adminSuggestions.value;
+            try {
+                const { error } = await supabase
+                    .from('edit_reports')
+                    .update({ admin_suggestions: suggestions })
+                    .eq('id', currentReportId);
+                if (error) throw error;
+                showSuccess("บันทึกข้อเสนอแนะสำเร็จ");
+            } catch (error) {
+                console.error("Error saving suggestion:", error);
+                showError("เกิดข้อผิดพลาดในการบันทึกข้อเสนอแนะ");
+            }
+        }
+
+        async function handleAnalyzeReport() {
+            if (!currentReportId) return;
+            showElement(elements.reportAiLoader);
+            elements.reportAiAnalysisContent.innerHTML = '';
+
+            const reportDetails = elements.detailsReportDetails.textContent;
+            const adminSuggestions = elements.adminSuggestions.value;
+
+            const prompt = `ในฐานะผู้จัดการฝ่ายวิศวกรรมไฟฟ้า, โปรดวิเคราะห์รายงานการแก้ไขปัญหาระบบไฟฟ้าดังนี้:
+---
+**รายละเอียดการแก้ไขจากผู้ปฏิบัติงาน:**
+${reportDetails}
+---
+**ข้อเสนอแนะจาก Admin:**
+${adminSuggestions || "ไม่มี"}
+---
+โปรดประเมิน:
+1.  **ความถูกต้องของการแก้ไข:** การดำเนินการสอดคล้องกับปัญหาที่อาจเกิดขึ้นหรือไม่?
+2.  **ประสิทธิผลที่คาดหวัง:** การแก้ไขนี้น่าจะช่วยลดค่า Loss ได้มากน้อยเพียงใด?
+3.  **ความเสี่ยงที่อาจเกิดขึ้น:** มีความเสี่ยงหรือผลกระทบข้างเคียงจากการแก้ไขนี้หรือไม่?
+4.  **คำแนะนำเพิ่มเติม:** มีขั้นตอนอื่นที่ควรทำเพิ่มเติมเพื่อยืนยันผลหรือป้องกันปัญหาในอนาคตหรือไม่?
+
+ใช้ภาษาไทย, สรุปให้กระชับ และจัดรูปแบบด้วย Markdown`;
+            
+            try {
+                const analysisText = await callGeminiAPI(prompt);
+                elements.reportAiAnalysisContent.innerHTML = marked.parse(analysisText);
+                // Save analysis to DB
+                await supabase
+                    .from('edit_reports')
+                    .update({ ai_report_analysis: analysisText })
+                    .eq('id', currentReportId);
+            } catch (error) {
+                console.error("Error analyzing report:", error);
+                elements.reportAiAnalysisContent.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการวิเคราะห์: ${error.message}</p>`;
+            } finally {
+                hideElement(elements.reportAiLoader);
             }
         }
 
@@ -2166,6 +2493,21 @@ ${currentAnalysisText}
             if(elements.generateActionPlanBtn) {
                 elements.generateActionPlanBtn.addEventListener('click', generateActionPlan);
             }
+
+            // New Report Listeners
+            elements.showEditReportModalBtn.addEventListener('click', showEditReportModal);
+            elements.closeEditReportModalBtn.addEventListener('click', hideEditReportModal);
+            elements.editReportModalOverlay.addEventListener('click', (e) => {
+                if(e.target === elements.editReportModalOverlay) hideEditReportModal();
+            });
+            elements.editReportForm.addEventListener('submit', handleSaveReport);
+
+            elements.closeReportDetailsModalBtn.addEventListener('click', hideReportDetailsModal);
+            elements.reportDetailsModalOverlay.addEventListener('click', (e) => {
+                if(e.target === elements.reportDetailsModalOverlay) hideReportDetailsModal();
+            });
+            elements.saveAdminSuggestionBtn.addEventListener('click', handleSaveAdminSuggestion);
+            elements.analyzeReportBtn.addEventListener('click', handleAnalyzeReport);
         }
         
         function setupSelectorListeners(allData) {
@@ -2180,6 +2522,22 @@ ${currentAnalysisText}
                 loadSelectedData(allData);
             });
             elements.viewMonthSelect.addEventListener('change', () => loadSelectedData(allData));
+        }
+
+        function setupAdminTabs() {
+            elements.adminConfigTab.addEventListener('click', () => {
+                elements.adminConfigTab.classList.add('active');
+                elements.adminReportsTab.classList.remove('active');
+                showElement(elements.adminConfigSection);
+                hideElement(elements.adminReportsSection);
+            });
+            elements.adminReportsTab.addEventListener('click', () => {
+                elements.adminReportsTab.classList.add('active');
+                elements.adminConfigTab.classList.remove('active');
+                showElement(elements.adminReportsSection);
+                hideElement(elements.adminConfigSection);
+                fetchAndDisplayReports();
+            });
         }
 
 
@@ -2202,13 +2560,14 @@ ${currentAnalysisText}
                 console.log('🚀 Initializing dashboard...');
                 
                 // Initialize Supabase client
-                if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
-                    throw new Error("กรุณาใส่ Supabase URL และ Anon Key ของคุณในโค้ดก่อน (ประมาณบรรทัดที่ 1340)");
+                if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('YOUR_SUPABASE_URL')) {
+                    throw new Error("กรุณาใส่ Supabase URL และ Anon Key ของคุณในโค้ดก่อน");
                 }
                 supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log("Supabase client initialized.");
 
                 setupEventListeners(); // Setup listeners first to make UI interactive.
+                setupAdminTabs();
 
                 const today = new Date();
                 if (elements.endDateInput) {
@@ -2227,10 +2586,19 @@ ${currentAnalysisText}
                 // Fetch initial data and then subscribe to changes
                 await fetchAndProcessInitialData();
                 
-                const channel = supabase.channel('public:analysis')
+                const analysisChannel = supabase.channel('public:analysis')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'analysis' }, payload => {
-                        console.log('Change received!', payload);
+                        console.log('Analysis data change received!', payload);
                         fetchAndProcessInitialData(); // Re-fetch all data on any change
+                    })
+                    .subscribe();
+
+                const reportsChannel = supabase.channel('public:edit_reports')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'edit_reports' }, payload => {
+                        console.log('Edit reports change received!', payload);
+                        if (!elements.adminReportsSection.classList.contains('hidden')) {
+                            fetchAndDisplayReports();
+                        }
                     })
                     .subscribe();
                 
