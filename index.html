@@ -2253,20 +2253,33 @@ ${currentAnalysisText}
         // --- NEW REPORTING FUNCTIONS ---
         async function handleSaveReport(event) {
             event.preventDefault();
-            const formData = new FormData(elements.editReportForm);
+            const submitButton = elements.editReportForm.querySelector('button[type="submit"]');
+            if (!submitButton) return;
+            const originalButtonContent = submitButton.innerHTML;
+
+            // Add loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = `
+                <div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div>
+                <span>กำลังส่ง...</span>
+            `;
+
             const reportData = {
-                reporter_name: document.getElementById('report-name').value,
-                reporter_position: document.getElementById('report-position').value,
-                reporter_affiliation: document.getElementById('report-affiliation').value,
-                report_details: document.getElementById('report-details').value,
+                reporter_name: document.getElementById('report-name').value.trim(),
+                reporter_position: document.getElementById('report-position').value.trim(),
+                reporter_affiliation: document.getElementById('report-affiliation').value.trim(),
+                report_details: document.getElementById('report-details').value.trim(),
                 authority: elements.viewAuthoritySelect.value,
                 transformer_id: elements.viewTransformerSelect.value,
                 month: elements.viewMonthSelect.value,
                 analysis_doc_id: `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`
             };
 
-            if (!reportData.reporter_name || !reportData.report_details) {
-                showError("กรุณากรอกชื่อและรายละเอียดการแก้ไข");
+            if (!reportData.reporter_name || !reportData.reporter_position || !reportData.reporter_affiliation || !reportData.report_details) {
+                showError("กรุณากรอกข้อมูลผู้รายงานและรายละเอียดการแก้ไขให้ครบถ้วน");
+                // Restore button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonContent;
                 return;
             }
 
@@ -2278,6 +2291,10 @@ ${currentAnalysisText}
             } catch (error) {
                 console.error("Error saving report:", error);
                 showError(`เกิดข้อผิดพลาดในการบันทึกรายงาน: ${error.message}`);
+            } finally {
+                // Restore button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonContent;
             }
         }
         
