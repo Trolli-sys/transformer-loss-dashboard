@@ -819,19 +819,23 @@
         </main>
     </div>
 
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // --- GLOBAL STATE ---
-        let currentUser = {
-            role: 'user'
-        };
-        let charts = {
-            trend: null,
-            meter: null
-        };
+        let currentUser = { role: 'user', uid: null };
+        let charts = { trend: null, meter: null };
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = ''; // To store AI analysis for action plan
         let currentDataSummary = ''; // To store data summary for action plan
+        let db, auth;
+        let unsubscribe; // To store the onSnapshot listener
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
         // --- DOM ELEMENTS ---
         const elements = {
@@ -1004,6 +1008,51 @@
                 showElement(elements.userWaitingMessage);
             }
         }
+        
+       async function setupFirebaseAuth() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // This promise will resolve once the initial authentication state is confirmed.
+                await new Promise((resolve, reject) => {
+                    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
+                        unsubscribeAuth(); // We only need this for the initial check.
+                        if (user) {
+                            console.log("Already signed in:", user.uid);
+                            currentUser.uid = user.uid;
+                            resolve(user);
+                        } else {
+                            try {
+                                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                    console.log("Signing in with custom token...");
+                                    const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                                    currentUser.uid = userCredential.user.uid;
+                                    console.log("Signed in with custom token:", currentUser.uid);
+                                    resolve(userCredential.user);
+                                } else {
+                                    console.log("Signing in anonymously...");
+                                    const userCredential = await signInAnonymously(auth);
+                                    currentUser.uid = userCredential.user.uid;
+                                    console.log("Signed in anonymously:", currentUser.uid);
+                                    resolve(userCredential.user);
+                                }
+                            } catch (authError) {
+                                console.error("Authentication failed:", authError);
+                                reject(authError);
+                            }
+                        }
+                    }, reject); // Pass reject to handle initial errors
+                });
+
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                // Re-throw the error to be caught by initializeDashboard
+                throw error;
+            }
+        }
+
 
         // --- DATA PROCESSING FUNCTIONS ---
         function findKey(obj, possibleKeys) {
@@ -1208,13 +1257,7 @@
                     resultsCount: results.length
                 });
 
-                const allSavedData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-                if (!allSavedData[authorityName]) allSavedData[authorityName] = {};
-
-                const transformerKey = mappings.map(m => m.transformerId).join('_');
-                if (!allSavedData[authorityName][transformerKey]) allSavedData[authorityName][transformerKey] = {};
-
-                allSavedData[authorityName][transformerKey][selectedMonthStr] = {
+                const dataToSave = {
                     results,
                     totalLoss,
                     totalTransformerEnergy,
@@ -1226,20 +1269,15 @@
                     avgPF: keyMetrics.avgPF,
                     peakPower: keyMetrics.peakPower,
                     peakPowerDate: keyMetrics.peakPowerDate,
-                    mappings: mappings
+                    mappings: mappings,
+                    lastUpdated: new Date().toISOString()
                 };
+                
+                const docId = `${authorityName}_${mappings.map(m => m.transformerId).join('_')}_${selectedMonthStr}`;
+                const docRef = doc(db, "artifacts", appId, "public", "data", "analysis", docId);
+                await setDoc(docRef, { [docId]: dataToSave }, { merge: true });
 
-                localStorage.setItem('allDashboardData', JSON.stringify(allSavedData));
-                console.log('Data saved successfully');
-
-                analysisDone = true;
-                renderAppForRole();
-                populateSelectors({
-                    authority: authorityName,
-                    transformer: transformerKey,
-                    month: selectedMonthStr
-                });
-                displayResults(allSavedData[authorityName][transformerKey][selectedMonthStr]);
+                console.log('Data saved to Firestore successfully');
 
                 showSuccess(`วิเคราะห์เสร็จสิ้น! พบ ${mappings.length} หม้อแปลง และ ${meterBreakdown.length} มิเตอร์`);
 
@@ -1760,8 +1798,7 @@ ${currentAnalysisText}
 
 
         // --- SELECTOR FUNCTIONS ---
-        function populateSelectors(selected = {}) {
-            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+        function populateSelectors(allData) {
             const authorities = Object.keys(allData).sort();
 
             elements.viewAuthoritySelect.innerHTML = '<option value="">-- เลือกการไฟฟ้า --</option>';
@@ -1769,16 +1806,11 @@ ${currentAnalysisText}
                 const option = document.createElement('option');
                 option.value = auth;
                 option.textContent = auth;
-                if (selected.authority === auth) option.selected = true;
                 elements.viewAuthoritySelect.appendChild(option);
             });
-
-            populateTransformerSelector(selected);
         }
 
-        function populateTransformerSelector(selected = {}) {
-            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-            const selectedAuthority = selected.authority || elements.viewAuthoritySelect.value;
+        function populateTransformerSelector(allData, selectedAuthority) {
             const transformers = selectedAuthority ? Object.keys(allData[selectedAuthority] || {}).sort() : [];
 
             elements.viewTransformerSelect.innerHTML = '<option value="">-- เลือกหม้อแปลง --</option>';
@@ -1786,17 +1818,11 @@ ${currentAnalysisText}
                 const option = document.createElement('option');
                 option.value = tr;
                 option.textContent = tr;
-                if (selected.transformer === tr) option.selected = true;
                 elements.viewTransformerSelect.appendChild(option);
             });
-
-            populateMonthSelector(selected);
         }
 
-        function populateMonthSelector(selected = {}) {
-            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-            const selectedAuthority = selected.authority || elements.viewAuthoritySelect.value;
-            const selectedTransformer = selected.transformer || elements.viewTransformerSelect.value;
+        function populateMonthSelector(allData, selectedAuthority, selectedTransformer) {
             let months = [];
             if (selectedAuthority && selectedTransformer && allData[selectedAuthority] && allData[selectedAuthority][selectedTransformer]) {
                 months = Object.keys(allData[selectedAuthority][selectedTransformer] || {}).sort().reverse();
@@ -1807,13 +1833,11 @@ ${currentAnalysisText}
                 const option = document.createElement('option');
                 option.value = month;
                 option.textContent = month;
-                if (selected.month === month) option.selected = true;
                 elements.viewMonthSelect.appendChild(option);
             });
         }
 
-        function loadSelectedData() {
-            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+        function loadSelectedData(allData) {
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
             const selectedMonth = elements.viewMonthSelect.value;
@@ -1824,6 +1848,8 @@ ${currentAnalysisText}
                     data = allData[selectedAuthority][selectedTransformer][selectedMonth];
                 }
                 if (data) {
+                    analysisDone = true;
+                    renderAppForRole();
                     displayResults(data);
                 }
             }
@@ -1934,12 +1960,9 @@ ${currentAnalysisText}
                 const password = document.getElementById('password').value.trim();
 
                 if (username === 'admin' && password === 'admin123') {
-                    currentUser = {
-                        role: 'admin'
-                    };
+                    currentUser.role = 'admin';
                     hideLoginModal();
                     renderAppForRole();
-                    loadSavedMappings();
                     showSuccess('เข้าสู่ระบบสำเร็จ!');
                 } else {
                     const errorElement = document.getElementById('login-error');
@@ -1962,10 +1985,12 @@ ${currentAnalysisText}
             });
 
             elements.logoutBtn.addEventListener('click', () => {
-                currentUser = {
-                    role: 'user'
-                };
-                renderAppForRole();
+                signOut(auth).then(() => {
+                    currentUser.role = 'user';
+                    renderAppForRole();
+                }).catch(error => {
+                    console.error("Sign out error", error);
+                });
             });
 
             const inputElements = [
@@ -2020,22 +2045,21 @@ ${currentAnalysisText}
             if(elements.generateActionPlanBtn) {
                 elements.generateActionPlanBtn.addEventListener('click', generateActionPlan);
             }
-
-            elements.viewAuthoritySelect.addEventListener('change', () => populateTransformerSelector());
-            elements.viewTransformerSelect.addEventListener('change', () => populateMonthSelector());
-            elements.viewMonthSelect.addEventListener('change', loadSelectedData);
+        }
+        
+        function setupSelectorListeners(allData) {
+             elements.viewAuthoritySelect.addEventListener('change', () => {
+                populateTransformerSelector(allData, elements.viewAuthoritySelect.value);
+                populateMonthSelector(allData, elements.viewAuthoritySelect.value, elements.viewTransformerSelect.value);
+                loadSelectedData(allData);
+            });
+            elements.viewTransformerSelect.addEventListener('change', () => {
+                populateMonthSelector(allData, elements.viewAuthoritySelect.value, elements.viewTransformerSelect.value);
+                loadSelectedData(allData);
+            });
+            elements.viewMonthSelect.addEventListener('change', () => loadSelectedData(allData));
         }
 
-        function loadSavedMappings() {
-            console.log('🔧 loadSavedMappings called');
-            if (elements.transformerUrl && elements.meterUrl &&
-                elements.transformerUrl.value.trim() && elements.meterUrl.value.trim()) {
-                console.log('📊 URLs available, triggering mapping detection');
-                detectMappingsFromUrls();
-            } else {
-                console.log('📝 No URLs available for mapping detection');
-            }
-        }
 
         function updateUrlStatus(type, isValid) {
             const statusEl = document.getElementById(`${type}-url-status`);
@@ -2050,11 +2074,13 @@ ${currentAnalysisText}
             }
         }
 
-
         // --- STARTUP AND INITIALIZATION ---
-        function initializeDashboard() {
+        async function initializeDashboard() {
             try {
                 console.log('🚀 Initializing dashboard...');
+                
+                await setupFirebaseAuth();
+                console.log("Authentication complete. Current user:", currentUser);
 
                 setupEventListeners();
 
@@ -2071,30 +2097,44 @@ ${currentAnalysisText}
                 if (elements.startDateInput) {
                     elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
                 }
-
-                const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
-                const authorities = Object.keys(allData);
-
-                if (authorities.length > 0) {
-                    console.log('📊 Found existing data for authorities:', authorities);
-                    analysisDone = true;
-                    const latestAuthority = authorities.sort().pop();
-                    const transformers = Object.keys(allData[latestAuthority]).sort();
-                    const latestTransformer = transformers.pop();
-                    const months = Object.keys(allData[latestAuthority][latestTransformer]).sort();
-                    const latestMonth = months.pop();
-
-                    populateSelectors({
-                        authority: latestAuthority,
-                        transformer: latestTransformer,
-                        month: latestMonth
+                
+                // Set up Firestore listener
+                const q = query(collection(db, "artifacts", appId, "public", "data", "analysis"));
+                unsubscribe = onSnapshot(q, (querySnapshot) => {
+                    const allData = {};
+                    let hasData = false;
+                    querySnapshot.forEach((doc) => {
+                        const docData = doc.data();
+                        for (const key in docData) {
+                            const data = docData[key];
+                            if (!allData[data.authority]) {
+                                allData[data.authority] = {};
+                            }
+                            const transformerKey = data.mappings.map(m => m.transformerId).join('_');
+                            const month = key.split('_').pop();
+                            if (!allData[data.authority][transformerKey]) {
+                                allData[data.authority][transformerKey] = {};
+                            }
+                            allData[data.authority][transformerKey][month] = data;
+                            hasData = true;
+                        }
                     });
-                    displayResults(allData[latestAuthority][latestTransformer][latestMonth]);
-                } else {
-                    console.log('📝 No existing data found');
-                }
 
-                renderAppForRole();
+                    console.log("Firestore data updated:", allData);
+
+                    if (hasData) {
+                        populateSelectors(allData);
+                        setupSelectorListeners(allData); // Re-attach listeners with the new data scope
+                        loadSelectedData(allData); // Try to load data based on current selections
+                    } else {
+                        analysisDone = false;
+                        renderAppForRole();
+                    }
+                }, (error) => {
+                    console.error("Error listening to Firestore:", error);
+                    showError("ไม่สามารถเชื่อมต่อกับฐานข้อมูลแบบเรียลไทม์ได้");
+                });
+
                 console.log('✅ Dashboard initialized successfully');
 
             } catch (error) {
@@ -2119,7 +2159,6 @@ ${currentAnalysisText}
             try {
                 console.log('🎯 DOM Content Loaded, starting application...');
                 initializeDashboard();
-                console.log('✅ Application started successfully');
             } catch (error) {
                 console.error('❌ Critical error during application startup:', error);
                 const errorDiv = document.getElementById('error-message');
