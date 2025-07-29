@@ -2275,9 +2275,16 @@ ${currentAnalysisText}
                 analysis_doc_id: `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`
             };
 
+            // Enhanced validation
             if (!reportData.reporter_name || !reportData.reporter_position || !reportData.reporter_affiliation || !reportData.report_details) {
                 showError("กรุณากรอกข้อมูลผู้รายงานและรายละเอียดการแก้ไขให้ครบถ้วน");
-                // Restore button state
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonContent;
+                return;
+            }
+            
+            if (!reportData.authority || !reportData.transformer_id || !reportData.month) {
+                showError("ไม่สามารถส่งรายงานได้เนื่องจากไม่ได้เลือกข้อมูลการวิเคราะห์ (การไฟฟ้า, หม้อแปลง, เดือน)");
                 submitButton.disabled = false;
                 submitButton.innerHTML = originalButtonContent;
                 return;
