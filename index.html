@@ -840,21 +840,23 @@
     </div>
 
     <script type="module">
+        const { createClient } = window.supabase;
+
         // --- GLOBAL STATE ---
-        let currentUser = { role: 'user', uid: null };
+        let currentUser = { role: 'user' };
         let charts = { trend: null, meter: null };
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = ''; // To store AI analysis for action plan
         let currentDataSummary = ''; // To store data summary for action plan
         let supabase;
-        let realtimeChannel;
         let allAnalysisData = {}; // Global cache for Supabase data
 
         // --- SUPABASE CONFIG ---
         // IMPORTANT: Replace with your Supabase Project URL and Anon Key
         const SUPABASE_URL = 'https://cqfpctbyosfrpipcntik.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxZnBjdGJ5b3NmcnBpcGNudGlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NTcwODYsImV4cCI6MjA2OTMzMzA4Nn0.3fR9jkM2E0AEs7Kddj5mwpd9ySF1Z8nTp6MiCVCWD6Y';
+
 
         // --- DOM ELEMENTS ---
         const elements = {
@@ -1776,7 +1778,7 @@ Loss เฉลี่ยรวม: ${avgLossPercent.toFixed(2)}%
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
                 // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-                const apiKey = ""; 
+                const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                 
                 const response = await fetch(apiUrl, {
@@ -1831,7 +1833,7 @@ ${currentAnalysisText}
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
                 // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-                const apiKey = "";
+                const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -1948,13 +1950,13 @@ ${currentAnalysisText}
                 title: "ยืนยันการลบข้อมูล",
                 text: `คุณต้องการลบข้อมูลการวิเคราะห์ของเดือน ${selectedMonth} สำหรับ ${selectedAuthority} ใช่หรือไม่?`,
                 onConfirm: async () => {
-                    console.log(`Deleting document: ${docId}`);
+                    console.log(`Deleting from Supabase with id: ${docId}`);
                     try {
                         const { error } = await supabase
-                            .from('analysis')
+                            .from('analysis_data')
                             .delete()
-                            .eq('doc_id', docId);
-                        
+                            .eq('id', docId);
+
                         if (error) throw error;
                         
                         showSuccess("ลบข้อมูลสำเร็จแล้ว");
@@ -2200,7 +2202,10 @@ ${currentAnalysisText}
                 console.log('🚀 Initializing dashboard...');
                 
                 // Initialize Supabase client
-                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
+                    throw new Error("กรุณาใส่ Supabase URL และ Anon Key ของคุณในโค้ดก่อน (ประมาณบรรทัดที่ 1340)");
+                }
+                supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log("Supabase client initialized.");
 
                 setupEventListeners(); // Setup listeners first to make UI interactive.
@@ -2222,14 +2227,14 @@ ${currentAnalysisText}
                 // Fetch initial data and then subscribe to changes
                 await fetchAndProcessInitialData();
                 
-                realtimeChannel = supabase.channel('public:analysis')
+                const channel = supabase.channel('public:analysis')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'analysis' }, payload => {
-                        console.log('Realtime change received!', payload);
+                        console.log('Change received!', payload);
                         fetchAndProcessInitialData(); // Re-fetch all data on any change
                     })
                     .subscribe();
-
-                console.log('✅ Dashboard initialized successfully');
+                
+                console.log('✅ Dashboard initialized successfully and listening for changes.');
 
             } catch (error) {
                 console.error('❌ Error initializing dashboard:', error);
