@@ -351,21 +351,6 @@
             </form>
         </div>
     </div>
-    
-    <!-- Confirmation Modal -->
-    <div id="confirm-modal-overlay" class="modal-overlay hidden">
-        <div id="confirm-modal" class="modal-content w-full max-w-md mx-4">
-            <div class="glass-card p-8 relative text-center">
-                <h3 id="confirm-modal-title" class="text-xl font-bold text-gray-900 mb-4">ยืนยันการกระทำ</h3>
-                <p id="confirm-modal-text" class="text-gray-600 mb-6">คุณแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ?</p>
-                <div class="flex justify-center space-x-4">
-                    <button id="confirm-modal-cancel-btn" class="btn-secondary">ยกเลิก</button>
-                    <button id="confirm-modal-confirm-btn" class="btn-primary bg-red-600 hover:bg-red-700">ยืนยัน</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
     <!-- Main Application -->
     <div id="app-container" class="min-h-screen">
@@ -546,11 +531,7 @@
                             </div>
                         </div>
 
-                        <div class="flex justify-end space-x-4">
-                             <button id="delete-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 hidden">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                <span>ลบข้อมูลที่แสดง</span>
-                            </button>
+                        <div class="flex justify-end">
                             <button id="calculate-btn" class="btn-primary" disabled>
                                 <svg id="loading-spinner" class="spinner hidden" viewBox="0 0 24 24">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -838,25 +819,19 @@
         </main>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
+    <script>
         // --- GLOBAL STATE ---
-        let currentUser = { role: 'user', uid: null };
-        let charts = { trend: null, meter: null };
+        let currentUser = {
+            role: 'user'
+        };
+        let charts = {
+            trend: null,
+            meter: null
+        };
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = ''; // To store AI analysis for action plan
         let currentDataSummary = ''; // To store data summary for action plan
-        let db, auth;
-        let unsubscribe; // To store the onSnapshot listener
-        let allAnalysisData = {}; // Global cache for Firestore data
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-
 
         // --- DOM ELEMENTS ---
         const elements = {
@@ -866,14 +841,6 @@
             loginForm: document.getElementById('login-form'),
             loginError: document.getElementById('login-error'),
             closeModalBtn: document.getElementById('close-modal-btn'),
-            
-            // Confirmation Modal elements
-            confirmModalOverlay: document.getElementById('confirm-modal-overlay'),
-            confirmModal: document.getElementById('confirm-modal'),
-            confirmModalTitle: document.getElementById('confirm-modal-title'),
-            confirmModalText: document.getElementById('confirm-modal-text'),
-            confirmModalCancelBtn: document.getElementById('confirm-modal-cancel-btn'),
-            confirmModalConfirmBtn: document.getElementById('confirm-modal-confirm-btn'),
 
             // Auth elements
             adminLoginBtn: document.getElementById('admin-login-btn'),
@@ -890,7 +857,6 @@
 
             // Control elements
             calculateBtn: document.getElementById('calculate-btn'),
-            deleteBtn: document.getElementById('delete-btn'),
             loadingSpinner: document.getElementById('loading-spinner'),
             errorMessage: document.getElementById('error-message'),
             errorText: document.getElementById('error-text'),
@@ -1017,34 +983,6 @@
                 hideElement(elements.loginModal);
             }, 300);
         }
-        
-        function showConfirmModal({ title, text, onConfirm }) {
-            elements.confirmModalTitle.textContent = title;
-            elements.confirmModalText.textContent = text;
-            
-            const confirmHandler = () => {
-                onConfirm();
-                hideConfirmModal();
-                elements.confirmModalConfirmBtn.removeEventListener('click', confirmHandler);
-            };
-            
-            elements.confirmModalConfirmBtn.addEventListener('click', confirmHandler);
-
-            showElement(elements.confirmModalOverlay);
-            setTimeout(() => {
-                elements.confirmModalOverlay.classList.add('show');
-                elements.confirmModal.classList.add('show');
-            }, 10);
-        }
-
-        function hideConfirmModal() {
-            elements.confirmModalOverlay.classList.remove('show');
-            elements.confirmModal.classList.remove('show');
-            setTimeout(() => {
-                hideElement(elements.confirmModalOverlay);
-            }, 300);
-        }
-
 
         // --- AUTH FUNCTIONS ---
         function renderAppForRole() {
@@ -1057,10 +995,6 @@
             document.querySelectorAll('.admin-only').forEach(el =>
                 toggleElement(el, isAdmin)
             );
-            
-            // Show delete button only for admin and when data is displayed
-            toggleElement(elements.deleteBtn, isAdmin && analysisDone);
-
 
             if (analysisDone) {
                 showElement(elements.resultsSection);
@@ -1070,51 +1004,6 @@
                 showElement(elements.userWaitingMessage);
             }
         }
-        
-       async function setupFirebaseAuth() {
-            try {
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // This promise will resolve once the initial authentication state is confirmed.
-                await new Promise((resolve, reject) => {
-                    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-                        unsubscribeAuth(); // We only need this for the initial check.
-                        if (user) {
-                            console.log("Already signed in:", user.uid);
-                            currentUser.uid = user.uid;
-                            resolve(user);
-                        } else {
-                            try {
-                                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                                    console.log("Signing in with custom token...");
-                                    const userCredential = await signInWithCustomToken(auth, __initial_auth_token);
-                                    currentUser.uid = userCredential.user.uid;
-                                    console.log("Signed in with custom token:", currentUser.uid);
-                                    resolve(userCredential.user);
-                                } else {
-                                    console.log("Signing in anonymously...");
-                                    const userCredential = await signInAnonymously(auth);
-                                    currentUser.uid = userCredential.user.uid;
-                                    console.log("Signed in anonymously:", currentUser.uid);
-                                    resolve(userCredential.user);
-                                }
-                            } catch (authError) {
-                                console.error("Authentication failed:", authError);
-                                reject(authError);
-                            }
-                        }
-                    }, reject); // Pass reject to handle initial errors
-                });
-
-            } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                // Re-throw the error to be caught by initializeDashboard
-                throw error;
-            }
-        }
-
 
         // --- DATA PROCESSING FUNCTIONS ---
         function findKey(obj, possibleKeys) {
@@ -1319,7 +1208,13 @@
                     resultsCount: results.length
                 });
 
-                const dataToSave = {
+                const allSavedData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+                if (!allSavedData[authorityName]) allSavedData[authorityName] = {};
+
+                const transformerKey = mappings.map(m => m.transformerId).join('_');
+                if (!allSavedData[authorityName][transformerKey]) allSavedData[authorityName][transformerKey] = {};
+
+                allSavedData[authorityName][transformerKey][selectedMonthStr] = {
                     results,
                     totalLoss,
                     totalTransformerEnergy,
@@ -1331,15 +1226,20 @@
                     avgPF: keyMetrics.avgPF,
                     peakPower: keyMetrics.peakPower,
                     peakPowerDate: keyMetrics.peakPowerDate,
-                    mappings: mappings,
-                    lastUpdated: new Date().toISOString()
+                    mappings: mappings
                 };
-                
-                const docId = `${authorityName}_${mappings.map(m => m.transformerId).join('_')}_${selectedMonthStr}`;
-                const docRef = doc(db, "artifacts", appId, "public", "data", "analysis", docId);
-                await setDoc(docRef, { [docId]: dataToSave }, { merge: true });
 
-                console.log('Data saved to Firestore successfully');
+                localStorage.setItem('allDashboardData', JSON.stringify(allSavedData));
+                console.log('Data saved successfully');
+
+                analysisDone = true;
+                renderAppForRole();
+                populateSelectors({
+                    authority: authorityName,
+                    transformer: transformerKey,
+                    month: selectedMonthStr
+                });
+                displayResults(allSavedData[authorityName][transformerKey][selectedMonthStr]);
 
                 showSuccess(`วิเคราะห์เสร็จสิ้น! พบ ${mappings.length} หม้อแปลง และ ${meterBreakdown.length} มิเตอร์`);
 
@@ -1583,10 +1483,11 @@
         }
 
         function renderTrendChart(data) {
+            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
 
-            const transformerHistory = (allAnalysisData[selectedAuthority] && allAnalysisData[selectedAuthority][selectedTransformer]) || {};
+            const transformerHistory = (allData[selectedAuthority] && allData[selectedAuthority][selectedTransformer]) || {};
             const sortedMonths = Object.keys(transformerHistory).sort();
 
             const trendData = sortedMonths.map(month => {
@@ -1767,7 +1668,7 @@ Loss เฉลี่ยรวม: ${avgLossPercent.toFixed(2)}%
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
                 // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-                const apiKey = ""; 
+                const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                 
                 const response = await fetch(apiUrl, {
@@ -1822,7 +1723,7 @@ ${currentAnalysisText}
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { contents: chatHistory };
                 // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-                const apiKey = "";
+                const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 const response = await fetch(apiUrl, {
@@ -1859,7 +1760,8 @@ ${currentAnalysisText}
 
 
         // --- SELECTOR FUNCTIONS ---
-        function populateSelectors(allData) {
+        function populateSelectors(selected = {}) {
+            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
             const authorities = Object.keys(allData).sort();
 
             elements.viewAuthoritySelect.innerHTML = '<option value="">-- เลือกการไฟฟ้า --</option>';
@@ -1867,11 +1769,16 @@ ${currentAnalysisText}
                 const option = document.createElement('option');
                 option.value = auth;
                 option.textContent = auth;
+                if (selected.authority === auth) option.selected = true;
                 elements.viewAuthoritySelect.appendChild(option);
             });
+
+            populateTransformerSelector(selected);
         }
 
-        function populateTransformerSelector(allData, selectedAuthority) {
+        function populateTransformerSelector(selected = {}) {
+            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+            const selectedAuthority = selected.authority || elements.viewAuthoritySelect.value;
             const transformers = selectedAuthority ? Object.keys(allData[selectedAuthority] || {}).sort() : [];
 
             elements.viewTransformerSelect.innerHTML = '<option value="">-- เลือกหม้อแปลง --</option>';
@@ -1879,11 +1786,17 @@ ${currentAnalysisText}
                 const option = document.createElement('option');
                 option.value = tr;
                 option.textContent = tr;
+                if (selected.transformer === tr) option.selected = true;
                 elements.viewTransformerSelect.appendChild(option);
             });
+
+            populateMonthSelector(selected);
         }
 
-        function populateMonthSelector(allData, selectedAuthority, selectedTransformer) {
+        function populateMonthSelector(selected = {}) {
+            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+            const selectedAuthority = selected.authority || elements.viewAuthoritySelect.value;
+            const selectedTransformer = selected.transformer || elements.viewTransformerSelect.value;
             let months = [];
             if (selectedAuthority && selectedTransformer && allData[selectedAuthority] && allData[selectedAuthority][selectedTransformer]) {
                 months = Object.keys(allData[selectedAuthority][selectedTransformer] || {}).sort().reverse();
@@ -1894,11 +1807,13 @@ ${currentAnalysisText}
                 const option = document.createElement('option');
                 option.value = month;
                 option.textContent = month;
+                if (selected.month === month) option.selected = true;
                 elements.viewMonthSelect.appendChild(option);
             });
         }
 
-        function loadSelectedData(allData) {
+        function loadSelectedData() {
+            const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
             const selectedMonth = elements.viewMonthSelect.value;
@@ -1909,50 +1824,10 @@ ${currentAnalysisText}
                     data = allData[selectedAuthority][selectedTransformer][selectedMonth];
                 }
                 if (data) {
-                    analysisDone = true;
-                    renderAppForRole();
                     displayResults(data);
-                } else {
-                    // This can happen if selectors change and the specific month doesn't exist for the new selection
-                    analysisDone = false;
-                    renderAppForRole();
                 }
-            } else {
-                 analysisDone = Object.keys(allData).length > 0;
-                 renderAppForRole();
             }
         }
-        
-        async function deleteCurrentAnalysis() {
-            const selectedAuthority = elements.viewAuthoritySelect.value;
-            const selectedTransformer = elements.viewTransformerSelect.value;
-            const selectedMonth = elements.viewMonthSelect.value;
-
-            if (!selectedAuthority || !selectedTransformer || !selectedMonth) {
-                showError("กรุณาเลือกข้อมูลที่ต้องการลบให้ครบถ้วน");
-                return;
-            }
-
-            const docId = `${selectedAuthority}_${selectedTransformer}_${selectedMonth}`;
-            
-            showConfirmModal({
-                title: "ยืนยันการลบข้อมูล",
-                text: `คุณต้องการลบข้อมูลการวิเคราะห์ของเดือน ${selectedMonth} สำหรับ ${selectedAuthority} ใช่หรือไม่?`,
-                onConfirm: async () => {
-                    console.log(`Deleting document: ${docId}`);
-                    try {
-                        const docRef = doc(db, "artifacts", appId, "public", "data", "analysis", docId);
-                        await deleteDoc(docRef);
-                        showSuccess("ลบข้อมูลสำเร็จแล้ว");
-                        // The onSnapshot listener will automatically update the UI.
-                    } catch (error) {
-                        console.error("Error deleting document:", error);
-                        showError(`เกิดข้อผิดพลาดในการลบข้อมูล: ${error.message}`);
-                    }
-                }
-            });
-        }
-
 
         // --- AUTO-MAPPING FUNCTION ---
         async function detectMappingsFromUrls() {
@@ -2050,13 +1925,6 @@ ${currentAnalysisText}
                     hideLoginModal();
                 }
             });
-            
-            elements.confirmModalCancelBtn.addEventListener('click', hideConfirmModal);
-            elements.confirmModalOverlay.addEventListener('click', (e) => {
-                 if (e.target === elements.confirmModalOverlay) {
-                    hideConfirmModal();
-                }
-            });
 
             elements.loginForm.addEventListener('submit', (e) => {
                 e.preventDefault();
@@ -2066,9 +1934,12 @@ ${currentAnalysisText}
                 const password = document.getElementById('password').value.trim();
 
                 if (username === 'admin' && password === 'admin123') {
-                    currentUser.role = 'admin';
+                    currentUser = {
+                        role: 'admin'
+                    };
                     hideLoginModal();
                     renderAppForRole();
+                    loadSavedMappings();
                     showSuccess('เข้าสู่ระบบสำเร็จ!');
                 } else {
                     const errorElement = document.getElementById('login-error');
@@ -2091,12 +1962,10 @@ ${currentAnalysisText}
             });
 
             elements.logoutBtn.addEventListener('click', () => {
-                signOut(auth).then(() => {
-                    currentUser.role = 'user';
-                    renderAppForRole();
-                }).catch(error => {
-                    console.error("Sign out error", error);
-                });
+                currentUser = {
+                    role: 'user'
+                };
+                renderAppForRole();
             });
 
             const inputElements = [
@@ -2139,9 +2008,6 @@ ${currentAnalysisText}
                 e.stopPropagation();
                 calculateLoss();
             });
-            
-            elements.deleteBtn.addEventListener('click', deleteCurrentAnalysis);
-
 
             if (detectBtn) {
                 detectBtn.addEventListener('click', async (e) => {
@@ -2154,22 +2020,22 @@ ${currentAnalysisText}
             if(elements.generateActionPlanBtn) {
                 elements.generateActionPlanBtn.addEventListener('click', generateActionPlan);
             }
-        }
-        
-        function setupSelectorListeners(allData) {
-             elements.viewAuthoritySelect.addEventListener('change', () => {
-                populateTransformerSelector(allData, elements.viewAuthoritySelect.value);
-                // After repopulating transformers, also repopulate months for the new (or first) transformer
-                populateMonthSelector(allData, elements.viewAuthoritySelect.value, elements.viewTransformerSelect.value);
-                loadSelectedData(allData);
-            });
-            elements.viewTransformerSelect.addEventListener('change', () => {
-                populateMonthSelector(allData, elements.viewAuthoritySelect.value, elements.viewTransformerSelect.value);
-                loadSelectedData(allData);
-            });
-            elements.viewMonthSelect.addEventListener('change', () => loadSelectedData(allData));
+
+            elements.viewAuthoritySelect.addEventListener('change', () => populateTransformerSelector());
+            elements.viewTransformerSelect.addEventListener('change', () => populateMonthSelector());
+            elements.viewMonthSelect.addEventListener('change', loadSelectedData);
         }
 
+        function loadSavedMappings() {
+            console.log('🔧 loadSavedMappings called');
+            if (elements.transformerUrl && elements.meterUrl &&
+                elements.transformerUrl.value.trim() && elements.meterUrl.value.trim()) {
+                console.log('📊 URLs available, triggering mapping detection');
+                detectMappingsFromUrls();
+            } else {
+                console.log('📝 No URLs available for mapping detection');
+            }
+        }
 
         function updateUrlStatus(type, isValid) {
             const statusEl = document.getElementById(`${type}-url-status`);
@@ -2184,13 +2050,11 @@ ${currentAnalysisText}
             }
         }
 
+
         // --- STARTUP AND INITIALIZATION ---
-        async function initializeDashboard() {
+        function initializeDashboard() {
             try {
                 console.log('🚀 Initializing dashboard...');
-                
-                await setupFirebaseAuth();
-                console.log("Authentication complete. Current user:", currentUser);
 
                 setupEventListeners();
 
@@ -2207,64 +2071,30 @@ ${currentAnalysisText}
                 if (elements.startDateInput) {
                     elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
                 }
-                
-                // Set up Firestore listener
-                const q = query(collection(db, "artifacts", appId, "public", "data", "analysis"));
-                unsubscribe = onSnapshot(q, (querySnapshot) => {
-                    const allData = {};
-                    let hasData = false;
-                    querySnapshot.forEach((doc) => {
-                        const docData = doc.data();
-                        for (const key in docData) {
-                            const data = docData[key];
-                            if (!allData[data.authority]) {
-                                allData[data.authority] = {};
-                            }
-                            const transformerKey = data.mappings.map(m => m.transformerId).join('_');
-                            const month = key.split('_').pop();
-                            if (!allData[data.authority][transformerKey]) {
-                                allData[data.authority][transformerKey] = {};
-                            }
-                            allData[data.authority][transformerKey][month] = data;
-                            hasData = true;
-                        }
+
+                const allData = JSON.parse(localStorage.getItem('allDashboardData') || '{}');
+                const authorities = Object.keys(allData);
+
+                if (authorities.length > 0) {
+                    console.log('📊 Found existing data for authorities:', authorities);
+                    analysisDone = true;
+                    const latestAuthority = authorities.sort().pop();
+                    const transformers = Object.keys(allData[latestAuthority]).sort();
+                    const latestTransformer = transformers.pop();
+                    const months = Object.keys(allData[latestAuthority][latestTransformer]).sort();
+                    const latestMonth = months.pop();
+
+                    populateSelectors({
+                        authority: latestAuthority,
+                        transformer: latestTransformer,
+                        month: latestMonth
                     });
+                    displayResults(allData[latestAuthority][latestTransformer][latestMonth]);
+                } else {
+                    console.log('📝 No existing data found');
+                }
 
-                    allAnalysisData = allData; // Cache the data globally
-                    console.log("Firestore data updated:", allAnalysisData);
-
-                    if (hasData) {
-                        analysisDone = true;
-                        populateSelectors(allAnalysisData);
-                        
-                        // Auto-select latest data on first load
-                        const authorities = Object.keys(allAnalysisData).sort();
-                        const latestAuthority = authorities[authorities.length - 1];
-                        elements.viewAuthoritySelect.value = latestAuthority;
-                        
-                        populateTransformerSelector(allAnalysisData, latestAuthority);
-                        const transformers = Object.keys(allAnalysisData[latestAuthority]).sort();
-                        const latestTransformer = transformers[transformers.length - 1];
-                        elements.viewTransformerSelect.value = latestTransformer;
-
-                        populateMonthSelector(allAnalysisData, latestAuthority, latestTransformer);
-                        const months = Object.keys(allAnalysisData[latestAuthority][latestTransformer]).sort();
-                        const latestMonth = months[months.length - 1];
-                        elements.viewMonthSelect.value = latestMonth;
-                        
-                        loadSelectedData(allAnalysisData);
-                        
-                    } else {
-                        analysisDone = false;
-                    }
-                    renderAppForRole();
-                    setupSelectorListeners(allAnalysisData);
-
-                }, (error) => {
-                    console.error("Error listening to Firestore:", error);
-                    showError("ไม่สามารถเชื่อมต่อกับฐานข้อมูลแบบเรียลไทม์ได้");
-                });
-
+                renderAppForRole();
                 console.log('✅ Dashboard initialized successfully');
 
             } catch (error) {
@@ -2289,6 +2119,7 @@ ${currentAnalysisText}
             try {
                 console.log('🎯 DOM Content Loaded, starting application...');
                 initializeDashboard();
+                console.log('✅ Application started successfully');
             } catch (error) {
                 console.error('❌ Critical error during application startup:', error);
                 const errorDiv = document.getElementById('error-message');
