@@ -3054,9 +3054,11 @@ ${adminSuggestions || "ไม่มี"}
                 const reportsChannel = supabase.channel('public:edit_reports')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'edit_reports' }, payload => {
                         console.log('Edit reports change received!', payload);
-                        if (currentUser.role === 'admin' && !elements.adminReportsSection.classList.contains('hidden')) {
+                        // VVVVVVVV MODIFIED LINE VVVVVVVV
+                        if (currentUser.role === 'admin') {
                             fetchAndDisplayReports();
                         }
+                        // ^^^^^^^^ MODIFIED LINE ^^^^^^^^
                     })
                     .subscribe();
                 
