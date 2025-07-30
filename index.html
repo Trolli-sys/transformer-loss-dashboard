@@ -456,12 +456,22 @@
 
                     <!-- Admin Suggestion Section -->
                     <div class="p-4 border rounded-lg">
-                        <h3 class="font-semibold text-lg text-gray-800 mb-3">ข้อเสนอแนะจาก Admin</h3>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-semibold text-lg text-gray-800">ข้อเสนอแนะจาก Admin</h3>
+                            <button id="generate-suggestion-ai-btn" class="btn-secondary text-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                                <span>สร้างด้วย AI</span>
+                            </button>
+                        </div>
                         <div>
                             <label for="admin-suggestions" class="block text-sm font-medium text-gray-700 mb-2">เพิ่ม/แก้ไขข้อเสนอแนะ</label>
                             <textarea id="admin-suggestions" class="textarea-field" placeholder="เพิ่มความคิดเห็นหรือข้อเสนอแนะเพิ่มเติมที่นี่..."></textarea>
                         </div>
-                        <div class="mt-4 flex justify-end">
+                        <div class="mt-4 flex justify-between items-center">
+                             <button id="delete-report-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                <span>ลบรายงานนี้</span>
+                            </button>
                             <button id="save-admin-suggestion-btn" class="btn-primary">บันทึกข้อเสนอแนะ</button>
                         </div>
                     </div>
@@ -603,7 +613,6 @@
                             </div>
                         </div>
 
-                        <!-- Analysis Parameters -->
                         <div class="border-t border-gray-200 pt-8">
                             <h3 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
                                 <svg class="w-5 h-5 text-orange-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -631,7 +640,6 @@
                                 </div>
                             </div>
 
-                            <!-- Auto-detected Mapping Display -->
                             <div class="bg-blue-50 rounded-xl p-6 mb-8">
                                 <div class="flex items-center justify-between mb-4">
                                     <div class="flex items-center">
@@ -654,7 +662,6 @@
                                     • <strong>Loss:</strong> พลังงานจ่ายออก - พลังงานรับเข้า = การสูญเสีย
                                 </p>
 
-                                <!-- URL Status Indicator -->
                                 <div class="mb-4 p-3 bg-white rounded-lg border border-blue-200">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm font-medium text-blue-800">สถานะลิงก์ไฟล์:</span>
@@ -708,7 +715,6 @@
                         </div>
                     </div>
 
-                    <!-- Admin Reports Section -->
                     <div id="admin-reports-section" class="hidden">
                          <div class="flex items-center space-x-3 mb-6">
                             <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
@@ -717,7 +723,6 @@
                             <h2 class="text-2xl font-bold text-gray-900">รายงานการแก้ไขจากผู้ใช้</h2>
                         </div>
                         <div id="reports-list-container" class="overflow-x-auto">
-                           <!-- Reports will be dynamically loaded here -->
                            <p id="no-reports-message" class="text-center text-gray-500 py-8">ยังไม่มีรายงานการแก้ไข</p>
                            <table class="data-table w-full hidden">
                                <thead>
@@ -726,21 +731,19 @@
                                        <th>ผู้รายงาน</th>
                                        <th>สังกัด</th>
                                        <th>หม้อแปลง</th>
+                                       <th>สถานะ</th>
                                        <th>การดำเนินการ</th>
                                    </tr>
                                </thead>
                                <tbody id="reports-table-body">
-                                   <!-- report rows -->
-                               </tbody>
+                                   </tbody>
                            </table>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Results Section -->
             <section id="results-section" class="hidden fade-in">
-                <!-- Filter Controls -->
                 <div class="glass-card p-6 mb-8">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
                         <h2 class="text-2xl font-bold text-gray-900 flex items-center">
@@ -764,7 +767,16 @@
                     </div>
                 </div>
 
-                <!-- KPI Cards -->
+                <div id="user-view-report-feedback-section" class="hidden glass-card p-6 mb-8">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        ข้อเสนอแนะจากผู้ดูแลระบบ
+                    </h3>
+                    <div id="user-view-feedback-content" class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg text-green-800">
+                        </div>
+                </div>
+
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="metric-card">
                         <div class="metric-label">พลังงานจ่ายออก</div>
@@ -819,9 +831,7 @@
                     </div>
                 </div>
 
-                <!-- Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                    <!-- Trend Chart -->
                     <div class="lg:col-span-2">
                         <div class="chart-container">
                             <div class="flex items-center justify-between mb-4">
@@ -841,7 +851,6 @@
                         </div>
                     </div>
 
-                    <!-- Key Metrics -->
                     <div class="chart-container">
                         <h3 class="text-lg font-bold text-gray-800 mb-6">ตัวชี้วัดสำคัญ</h3>
                         <div class="space-y-6">
@@ -884,15 +893,12 @@
                     </div>
                 </div>
 
-                <!-- Bottom Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <!-- Meter Consumption Chart -->
                     <div class="chart-container">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">10 อันดับมิเตอร์ที่ใช้พลังงานสูงสุด</h3>
                         <div id="meter-consumption-chart"></div>
                     </div>
 
-                    <!-- AI Analysis -->
                     <div class="chart-container">
                         <div class="flex justify-between items-start">
                              <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
@@ -928,7 +934,6 @@
                             </div>
                         </div>
                         
-                        <!-- Action Plan Section -->
                         <div id="action-plan-section" class="mt-6 hidden">
                             <h4 class="text-md font-bold text-gray-800 mb-4 flex items-center">
                                 <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -951,7 +956,6 @@
                     </div>
                 </div>
 
-                <!-- Detailed Table (Admin Only) -->
                 <div id="detailed-table-card" class="admin-only hidden">
                     <div class="glass-card p-8">
                         <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
@@ -975,15 +979,13 @@
                                     </tr>
                                 </thead>
                                 <tbody id="results-table">
-                                    <!-- Table rows will be populated here -->
-                                </tbody>
+                                    </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- User Waiting Message -->
             <div id="user-waiting-message" class="glass-card p-12 text-center">
                 <div class="max-w-md mx-auto">
                     <div class="w-24 h-24 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -1064,6 +1066,9 @@
             analyzeReportBtn: document.getElementById('analyze-report-btn'),
             reportAiLoader: document.getElementById('report-ai-loader'),
             reportAiAnalysisContent: document.getElementById('report-ai-analysis-content'),
+            generateSuggestionAiBtn: document.getElementById('generate-suggestion-ai-btn'),
+            deleteReportBtn: document.getElementById('delete-report-btn'),
+
 
             // Auth elements
             adminLoginBtn: document.getElementById('admin-login-btn'),
@@ -1101,6 +1106,8 @@
             viewAuthoritySelect: document.getElementById('view-authority-select'),
             viewTransformerSelect: document.getElementById('view-transformer-select'),
             viewMonthSelect: document.getElementById('view-month-select'),
+            userViewReportFeedbackSection: document.getElementById('user-view-report-feedback-section'),
+            userViewFeedbackContent: document.getElementById('user-view-feedback-content'),
 
             // Chart elements
             trendChart: document.getElementById('consumption-trend-chart'),
@@ -1740,9 +1747,10 @@
 
         // --- DISPLAY FUNCTIONS ---
         async function displayResults(data) {
-            // Hide action plan from previous results
+            // Hide action plan and feedback from previous results
             hideElement(elements.actionPlanSection);
             hideElement(elements.actionButtonsContainer);
+            hideElement(elements.userViewReportFeedbackSection);
             
             elements.kpiTransformerEnergy.textContent = data.totalTransformerEnergy.toLocaleString('en-US', {
                 maximumFractionDigits: 2
@@ -1761,6 +1769,7 @@
             updateResultsTable(data);
             renderCharts(data);
             await getAiAnalysis(data.results, avgLossPercent);
+            await checkAndDisplayFeedback();
         }
 
         function updateKeyMetrics(data) {
@@ -2113,10 +2122,12 @@ ${currentAnalysisText}
             });
         }
 
-        function loadSelectedData(allData) {
+        async function loadSelectedData(allData) {
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
             const selectedMonth = elements.viewMonthSelect.value;
+            
+            hideElement(elements.userViewReportFeedbackSection);
 
             if (selectedAuthority && selectedTransformer && selectedMonth) {
                 let data = null;
@@ -2126,9 +2137,8 @@ ${currentAnalysisText}
                 if (data) {
                     analysisDone = true;
                     renderAppForRole();
-                    displayResults(data);
+                    await displayResults(data);
                 } else {
-                    // This can happen if selectors change and the specific month doesn't exist for the new selection
                     analysisDone = false;
                     renderAppForRole();
                 }
@@ -2323,11 +2333,18 @@ ${currentAnalysisText}
                 elements.reportsTableBody.innerHTML = '';
                 reports.forEach(report => {
                     const row = document.createElement('tr');
+                    const hasFeedback = report.admin_suggestions && report.admin_suggestions.trim() !== '';
                     row.innerHTML = `
                         <td>${new Date(report.created_at).toLocaleDateString('th-TH')}</td>
                         <td>${report.reporter_name}</td>
                         <td>${report.reporter_affiliation}</td>
                         <td>${report.transformer_id}</td>
+                        <td>
+                           ${hasFeedback 
+                             ? '<span class="status-indicator status-success">ตอบกลับแล้ว</span>' 
+                             : '<span class="status-indicator status-warning">รอตรวจสอบ</span>'
+                           }
+                        </td>
                         <td>
                             <button class="btn-secondary text-sm view-details-btn">ดูรายละเอียด</button>
                         </td>
@@ -2394,6 +2411,89 @@ ${adminSuggestions || "ไม่มี"}
                 elements.reportAiAnalysisContent.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการวิเคราะห์: ${error.message}</p>`;
             } finally {
                 hideElement(elements.reportAiLoader);
+            }
+        }
+        
+        async function handleGenerateAiSuggestion() {
+            const btn = elements.generateSuggestionAiBtn;
+            if (!btn) return;
+            const originalBtnContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<div class="ai-spinner" style="width: 16px; height: 16px; border-width: 2px; border-top-color: var(--primary-500);"></div>`;
+
+            const reportDetails = elements.detailsReportDetails.textContent;
+            const prompt = `จากรายงานการแก้ไขของผู้ปฏิบัติงาน:
+        ---
+        ${reportDetails}
+        ---
+        ในฐานะผู้ดูแลระบบ โปรดเขียนข้อเสนอแนะสั้นๆ ที่ให้กำลังใจและเป็นประโยชน์แก่ผู้ปฏิบัติงาน ควรมีการขอบคุณสำหรับการรายงาน และอาจจะเสนอแนะขั้นตอนต่อไป (ถ้ามี) ให้ใช้ภาษาไทยที่สุภาพและเป็นทางการ`;
+
+            try {
+                const suggestionText = await callGeminiAPI(prompt);
+                elements.adminSuggestions.value = suggestionText.trim();
+            } catch (error) {
+                console.error("Error generating AI suggestion:", error);
+                showError("ไม่สามารถสร้างข้อเสนอแนะด้วย AI ได้");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnContent;
+            }
+        }
+
+        async function handleDeleteReport(reportId) {
+            if (!reportId) return;
+
+            showConfirmModal({
+                title: "ยืนยันการลบรายงาน",
+                text: `คุณต้องการลบรายงานนี้อย่างถาวรใช่หรือไม่?`,
+                onConfirm: async () => {
+                    console.log(`Deleting report with id: ${reportId}`);
+                    try {
+                        const { error } = await supabase
+                            .from('edit_reports')
+                            .delete()
+                            .eq('id', reportId);
+
+                        if (error) throw error;
+                        
+                        showSuccess("ลบรายงานสำเร็จแล้ว");
+                        hideReportDetailsModal();
+                        // The onSnapshot listener will automatically update the reports list.
+                    } catch (error) {
+                        console.error("Error deleting report:", error);
+                        showError(`เกิดข้อผิดพลาดในการลบรายงาน: ${error.message}`);
+                    }
+                }
+            });
+        }
+        
+        async function checkAndDisplayFeedback() {
+            const docId = `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`;
+            if (!docId) {
+                hideElement(elements.userViewReportFeedbackSection);
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('edit_reports')
+                    .select('admin_suggestions')
+                    .eq('analysis_doc_id', docId)
+                    .not('admin_suggestions', 'is', null)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0 && data[0].admin_suggestions) {
+                    elements.userViewFeedbackContent.innerHTML = marked.parse(data[0].admin_suggestions);
+                    showElement(elements.userViewReportFeedbackSection);
+                } else {
+                    hideElement(elements.userViewReportFeedbackSection);
+                }
+            } catch (error) {
+                console.error("Error checking for feedback:", error);
+                hideElement(elements.userViewReportFeedbackSection);
             }
         }
 
@@ -2532,6 +2632,8 @@ ${adminSuggestions || "ไม่มี"}
             });
             elements.saveAdminSuggestionBtn.addEventListener('click', handleSaveAdminSuggestion);
             elements.analyzeReportBtn.addEventListener('click', handleAnalyzeReport);
+            elements.generateSuggestionAiBtn.addEventListener('click', handleGenerateAiSuggestion);
+            elements.deleteReportBtn.addEventListener('click', () => handleDeleteReport(currentReportId));
         }
         
         function setupSelectorListeners(allData) {
