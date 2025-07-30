@@ -123,9 +123,19 @@
             font-weight: 500;
             transition: all 0.3s ease;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-secondary:disabled {
+            background: var(--gray-100);
+            color: var(--gray-500);
+            cursor: not-allowed;
         }
 
-        .btn-secondary:hover {
+
+        .btn-secondary:hover:not(:disabled) {
             background: white;
             border-color: var(--primary-500);
             color: var(--primary-600);
@@ -133,7 +143,7 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        .input-field, .textarea-field {
+        .input-field, .textarea-field, select.input-field {
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(229, 231, 235, 0.5);
             border-radius: 12px;
@@ -143,7 +153,7 @@
             width: 100%;
         }
 
-        .input-field:focus, .textarea-field:focus {
+        .input-field:focus, .textarea-field:focus, select.input-field:focus {
             outline: none;
             border-color: var(--primary-500);
             background: white;
@@ -344,14 +354,13 @@
 <body>
     <!-- Login Modal -->
     <div id="login-modal-overlay" class="modal-overlay">
-        <div id="login-modal" class="modal-content w-full max-w-md mx-4">
+        <div class="modal-content w-full max-w-md mx-4">
             <form id="login-form" class="glass-card p-8 relative">
                 <button type="button" id="close-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
-
                 <div class="text-center mb-6">
                     <div class="mx-auto w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-4">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -361,7 +370,6 @@
                     <h2 class="text-2xl font-bold text-gray-900">เข้าสู่ระบบ Admin</h2>
                     <p class="text-gray-500 mt-2">เพื่อเข้าถึงฟังก์ชันการจัดการขั้นสูง</p>
                 </div>
-
                 <div class="space-y-6">
                     <div>
                         <label for="username" class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้</label>
@@ -385,7 +393,7 @@
     
     <!-- Confirmation Modal -->
     <div id="confirm-modal-overlay" class="modal-overlay">
-        <div id="confirm-modal" class="modal-content w-full max-w-md mx-4">
+        <div class="modal-content w-full max-w-md mx-4">
             <div class="glass-card p-8 relative text-center">
                 <h3 id="confirm-modal-title" class="text-xl font-bold text-gray-900 mb-4">ยืนยันการกระทำ</h3>
                 <p id="confirm-modal-text" class="text-gray-600 mb-6">คุณแน่ใจหรือไม่ว่าต้องการดำเนินการต่อ?</p>
@@ -399,7 +407,7 @@
 
     <!-- User Edit Report Modal -->
     <div id="edit-report-modal-overlay" class="modal-overlay">
-        <div id="edit-report-modal" class="modal-content w-full max-w-2xl mx-4">
+        <div class="modal-content w-full max-w-2xl mx-4">
             <form id="edit-report-form" class="glass-card p-8 relative">
                  <button type="button" id="close-edit-report-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -437,7 +445,7 @@
 
     <!-- Admin View Report Details Modal -->
     <div id="report-details-modal-overlay" class="modal-overlay">
-        <div id="report-details-modal" class="modal-content w-full max-w-3xl mx-4">
+        <div class="modal-content w-full max-w-3xl mx-4">
             <div class="glass-card p-8 relative max-h-[90vh] overflow-y-auto">
                 <button type="button" id="close-report-details-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -463,9 +471,7 @@
 
                     <!-- Admin Suggestion Section -->
                     <div class="p-4 border rounded-lg">
-                        <div class="flex justify-between items-center mb-3">
-                            <h3 class="font-semibold text-lg text-gray-800">ข้อเสนอแนะจาก Admin</h3>
-                        </div>
+                        <h3 class="font-semibold text-lg text-gray-800 mb-3">ข้อเสนอแนะจาก Admin</h3>
                         <div>
                             <label for="admin-suggestions" class="block text-sm font-medium text-gray-700 mb-2">เพิ่ม/แก้ไขข้อเสนอแนะ</label>
                             <textarea id="admin-suggestions" class="textarea-field" placeholder="เพิ่มความคิดเห็นหรือข้อเสนอแนะเพิ่มเติมที่นี่..."></textarea>
@@ -485,12 +491,9 @@
                             <h3 class="font-semibold text-lg text-gray-800">บทวิเคราะห์รายงานโดย AI</h3>
                             <button id="analyze-report-btn" class="btn-secondary">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                                <span>วิเคราะห์</span>
+                                <span class="button-text">วิเคราะห์</span>
+                                <div class="ai-spinner hidden" style="width:16px; height:16px; border-width:2px; border-top-color: var(--gray-500)"></div>
                             </button>
-                        </div>
-                        <div id="report-ai-loader" class="flex flex-col items-center justify-center h-24 hidden">
-                            <div class="ai-spinner mb-2"></div>
-                            <p class="text-gray-500 text-sm">AI กำลังวิเคราะห์รายงาน...</p>
                         </div>
                         <div id="report-ai-analysis-content" class="prose max-w-none text-gray-600"></div>
                         <div class="mt-4 text-right">
@@ -523,7 +526,6 @@
                             <p class="text-sm text-gray-500">Transformer Loss Analysis System</p>
                         </div>
                     </div>
-
                     <div class="flex items-center space-x-4">
                         <div class="hidden sm:block">
                             <span class="text-sm text-gray-500">สวัสดี, </span>
@@ -1094,7 +1096,6 @@
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = '';
-        let currentDataSummary = '';
         let supabase;
         let allAnalysisData = {};
         let currentReportId = null;
@@ -1136,7 +1137,6 @@
             adminSuggestions: document.getElementById('admin-suggestions'),
             saveAdminSuggestionBtn: document.getElementById('save-admin-suggestion-btn'),
             analyzeReportBtn: document.getElementById('analyze-report-btn'),
-            reportAiLoader: document.getElementById('report-ai-loader'),
             reportAiAnalysisContent: document.getElementById('report-ai-analysis-content'),
             deleteReportBtn: document.getElementById('delete-report-btn'),
             useAiAnalysisAsSuggestionBtn: document.getElementById('use-ai-analysis-as-suggestion-btn'),
@@ -1294,7 +1294,6 @@
             toggleElement(elements.useAiAnalysisAsSuggestionBtn, !!report.ai_report_analysis);
             currentReportAiAnalysisText = report.ai_report_analysis || '';
             
-            hideElement(elements.reportAiLoader);
             showModal('report-details-modal-overlay');
         }
 
@@ -1305,7 +1304,6 @@
             const confirmHandler = () => {
                 onConfirm();
                 hideModal('confirm-modal-overlay');
-                elements.confirmModalConfirmBtn.removeEventListener('click', confirmHandler);
             };
             
             elements.confirmModalConfirmBtn.addEventListener('click', confirmHandler, { once: true });
@@ -1326,7 +1324,7 @@
                 toggleElement(el, isAdmin)
             );
             
-            toggleElement(elements.deleteBtn, isAdmin && analysisDone);
+            toggleElement(elements.deleteBtn, isAdmin && analysisDone && elements.viewMonthSelect.value);
 
 
             if (analysisDone) {
@@ -1350,53 +1348,58 @@
                 return;
             }
 
-            const allData = {};
+            allAnalysisData = {};
             let hasData = false;
             data.forEach(row => {
                 const analysisData = row.data;
-                if (!allData[analysisData.authority]) {
-                    allData[analysisData.authority] = {};
+                if (!allAnalysisData[analysisData.authority]) {
+                    allAnalysisData[analysisData.authority] = {};
                 }
                 const transformerKey = analysisData.mappings.map(m => m.transformerId).join('_');
                 const month = row.doc_id.split('_').pop();
-                 if (!allData[analysisData.authority][transformerKey]) {
-                    allData[analysisData.authority][transformerKey] = {};
+                 if (!allAnalysisData[analysisData.authority][transformerKey]) {
+                    allAnalysisData[analysisData.authority][transformerKey] = {};
                 }
-                allData[analysisData.authority][transformerKey][month] = analysisData;
+                allAnalysisData[analysisData.authority][transformerKey][month] = analysisData;
                 hasData = true;
             });
             
-            allAnalysisData = allData;
             analysisDone = hasData;
-
+            renderAppForRole();
             calculateAndDisplayOverallSummary(allAnalysisData);
+            
+            // This now correctly runs *after* data is processed.
+            setupSelectorListeners(allAnalysisData); 
 
             if (hasData) {
                 populateSelectors(allAnalysisData);
-                // Attempt to select the latest data by default
                 const authorities = Object.keys(allAnalysisData).sort();
-                if (authorities.length > 0) {
-                    const latestAuthority = authorities[authorities.length - 1];
+                const latestAuthority = authorities.length ? authorities[authorities.length - 1] : '';
+                
+                if (latestAuthority) {
                     elements.viewAuthoritySelect.value = latestAuthority;
-                    
-                    populateTransformerSelector(allAnalysisData, latestAuthority);
-                    const transformers = Object.keys(allAnalysisData[latestAuthority] || {}).sort();
-                    if (transformers.length > 0) {
-                         const latestTransformer = transformers[transformers.length - 1];
-                         elements.viewTransformerSelect.value = latestTransformer;
+                    // Manually trigger change to load subsequent dropdowns
+                    elements.viewAuthoritySelect.dispatchEvent(new Event('change'));
 
-                         populateMonthSelector(allAnalysisData, latestAuthority, latestTransformer);
-                         const months = Object.keys(allAnalysisData[latestAuthority]?.[latestTransformer] || {}).sort();
-                         if (months.length > 0) {
-                            const latestMonth = months[months.length - 1];
+                    const transformers = Object.keys(allAnalysisData[latestAuthority] || {}).sort();
+                    const latestTransformer = transformers.length ? transformers[transformers.length - 1] : '';
+
+                    if (latestTransformer) {
+                        elements.viewTransformerSelect.value = latestTransformer;
+                        elements.viewTransformerSelect.dispatchEvent(new Event('change'));
+
+                        const months = Object.keys(allAnalysisData[latestAuthority]?.[latestTransformer] || {}).sort();
+                        const latestMonth = months.length ? months[months.length - 1] : '';
+
+                        if (latestMonth) {
                             elements.viewMonthSelect.value = latestMonth;
-                         }
+                            elements.viewMonthSelect.dispatchEvent(new Event('change'));
+                        }
                     }
                 }
-                await loadSelectedData(allAnalysisData);
+            } else {
+                 populateSelectors({}); // Clear selectors if no data
             }
-            renderAppForRole();
-            setupSelectorListeners(allAnalysisData);
         }
 
         // --- DATA PROCESSING FUNCTIONS ---
@@ -1476,7 +1479,7 @@
 
                             if (headerIndex === -1) throw new Error(`ไม่พบหัวตารางที่ถูกต้องในไฟล์ (ต้องมีคอลัมน์ เช่น: ${keywords.join(', ')})`);
 
-                            const header = dataArray[headerIndex].map(h => h ? h.trim() : `col_${i}`);
+                            const header = dataArray[headerIndex].map((h, i) => h ? h.trim() : `col_${i}`);
                             const dataRows = dataArray.slice(headerIndex + 1);
 
                             const jsonData = dataRows.map(row => {
@@ -1599,11 +1602,9 @@
                 
             if (sortedData.length === 0) throw new Error("ไม่พบข้อมูลที่ถูกต้องในไฟล์หม้อแปลงหลังจากการกรอง");
 
-            // Find start record: the last one strictly before start date. If none, use the very first record.
             let startRecord = sortedData.filter(r => r.date < startDate).pop();
             if (!startRecord) startRecord = sortedData[0];
             
-            // Find end record: the last one on or before end date.
             const endRecord = sortedData.filter(r => r.date <= endDate).pop();
 
             if (!endRecord) throw new Error(`ไม่พบข้อมูล KWH_TOT ณ วันที่สิ้นสุด (${endDate.toLocaleDateString()})`);
@@ -1860,7 +1861,7 @@
 
         // --- AI ANALYSIS & ACTION PLAN (GEMINI API) ---
         async function callGeminiAPI(prompt) {
-            const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
+            const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ"; // ใช้ Key ของคุณ
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`;
             const response = await fetch(apiUrl, {
                 method: 'POST',
@@ -1888,8 +1889,21 @@
             hideElement(elements.actionButtonsContainer);
             hideElement(elements.actionPlanSection);
             
-            currentDataSummary = (results || []).map(r => `- หม้อแปลง ${r.transformerId}: Loss ${r.lossPercent.toFixed(2)}%`).join('\n');
-            const prompt = `ในฐานะผู้เชี่ยวชาญด้านระบบไฟฟ้า, จากข้อมูลค่า Loss ต่อไปนี้:\n\n${currentDataSummary}\n\nLoss เฉลี่ยรวม: ${avgLossPercent.toFixed(2)}%\n\nโปรดวิเคราะห์และสรุปประเด็นสำคัญ (ภาพรวม, หม้อแปลงที่น่าเป็นห่วง, การสูญเสียทางเทคนิค/ไม่ใช่ทางเทคนิค, ข้อเสนอแนะเร่งด่วน) โดยใช้ภาษาไทย สรุปให้กระชับ และจัดรูปแบบด้วย Markdown`;
+            const currentDataSummary = (results || []).map(r => `- หม้อแปลง ${r.transformerId}: Loss ${r.lossPercent.toFixed(2)}%`).join('\n');
+            const prompt = `ในฐานะผู้เชี่ยวชาญด้านระบบไฟฟ้า, จากข้อมูลค่า Loss ต่อไปนี้:
+
+${currentDataSummary}
+
+Loss เฉลี่ยรวม: ${avgLossPercent.toFixed(2)}%
+
+โปรดวิเคราะห์และสรุปประเด็นสำคัญ:
+1.  **ภาพรวม:** สถานการณ์โดยรวมเป็นอย่างไร
+2.  **หม้อแปลงที่น่าเป็นห่วง:** ระบุหม้อแปลงที่น่าเป็นห่วงที่สุด
+3.  **การสูญเสียทางเทคนิค (Technical Loss):** ประเมินความเป็นไปได้ของ Loss ที่เกิดจากปัจจัยทางเทคนิค (เช่น อุปกรณ์, สายส่ง)
+4.  **การสูญเสียที่ไม่ใช่ทางเทคนิค (Non-technical Loss):** ประเมินความเป็นไปได้ของ Loss ที่เกิดจากปัจจัยอื่นๆ (เช่น การลักลอบใช้ไฟ, มิเตอร์ผิดพลาด)
+5.  **ข้อเสนอแนะเร่งด่วน:** สิ่งที่ควรทำเป็นอันดับแรกคืออะไร
+
+ใช้ภาษาไทย, สรุปให้กระชับ และจัดรูปแบบด้วย Markdown`;
 
             try {
                 currentAnalysisText = await callGeminiAPI(prompt);
@@ -1897,6 +1911,7 @@
                 showElement(elements.aiContent);
                 showElement(elements.actionButtonsContainer);
             } catch (error) {
+                console.error("AI Analysis Error:", error);
                 elements.aiErrorText.textContent = `เกิดข้อผิดพลาดในการวิเคราะห์: ${error.message}`;
                 showElement(elements.aiError);
             } finally {
@@ -1911,13 +1926,25 @@
              hideElement(elements.actionPlanError);
              elements.generateActionPlanBtn.disabled = true;
 
-             const prompt = `จากบทวิเคราะห์ AI:\n---\n${currentAnalysisText}\n---\nและอ้างอิงตาม "แบบฟอร์มการตรวจหม้อแปลง (มป.3)" (รายการ: ค่าฉนวน, ค่า Ground, อุปกรณ์ประกอบ, การตรวจน้ำมัน, สภาพรับโหลด) โปรดสร้าง "แผนปฏิบัติการ" ที่เป็นรูปธรรมสำหรับทีมช่างไฟฟ้า จัดรูปแบบเป็นตาราง Markdown ที่มีคอลัมน์: "งานที่ต้องทำ (จากแบบฟอร์ม มป.3)", "หม้อแปลงเป้าหมาย", และ "ความสำคัญ (สูง/กลาง/ต่ำ)"`;
+             const prompt = `จากบทวิเคราะห์ AI:
+---
+${currentAnalysisText}
+---
+และอ้างอิงตาม "แบบฟอร์มการตรวจหม้อแปลง (มป.3)" ซึ่งมีรายการตรวจสอบดังนี้:
+- ค่าฉนวน (น้ำมัน, ขดลวด)
+- ค่า Ground
+- การตรวจสอบอุปกรณ์ประกอบ (ตัวถัง, Bushing, Tap Changer, Arcing Horn, ล่อฟ้า, ฟิวส์)
+- การตรวจเปลี่ยนและเติมน้ำมัน (ระดับน้ำมัน, สารดูดความชื้น, ปะเก็น)
+- การตรวจสอบสภาพรับโหลด (กระแส, แรงดัน)
+
+โปรดสร้าง "แผนปฏิบัติการ" (Action Plan) ที่เป็นรูปธรรมสำหรับทีมช่างไฟฟ้า โดยเลือกรายการที่เกี่ยวข้องที่สุดจากแบบฟอร์มการตรวจฯ มาสร้างเป็นแผน จัดรูปแบบเป็นตาราง Markdown ที่มีคอลัมน์: "งานที่ต้องทำ (จากแบบฟอร์ม มป.3)", "หม้อแปลงเป้าหมาย", และ "ความสำคัญ (สูง/กลาง/ต่ำ)"`;
             
              try {
                 const actionPlanText = await callGeminiAPI(prompt);
                 elements.actionPlanContent.innerHTML = marked.parse(actionPlanText);
                 showElement(elements.actionPlanContent);
              } catch (error) {
+                console.error("Action Plan Error:", error);
                 elements.actionPlanErrorText.textContent = `เกิดข้อผิดพลาดในการสร้างแผน: ${error.message}`;
                 showElement(elements.actionPlanError);
              } finally {
@@ -1933,6 +1960,9 @@
             authorities.forEach(auth => {
                 elements.viewAuthoritySelect.innerHTML += `<option value="${auth}">${auth}</option>`;
             });
+             // Clear subsequent dropdowns
+            elements.viewTransformerSelect.innerHTML = '<option value="">-- เลือกหม้อแปลง --</option>';
+            elements.viewMonthSelect.innerHTML = '<option value="">-- เลือกเดือน --</option>';
         }
 
         function populateTransformerSelector(allData, selectedAuthority) {
@@ -1953,13 +1983,15 @@
             });
         }
 
-        async function loadSelectedData(allData) {
+        async function loadSelectedData() {
             const auth = elements.viewAuthoritySelect.value;
             const trans = elements.viewTransformerSelect.value;
             const month = elements.viewMonthSelect.value;
             
-            if (auth && trans && month && allData[auth]?.[trans]?.[month]) {
-                 await displayResults(allData[auth][trans][month]);
+            toggleElement(elements.deleteBtn, currentUser.role === 'admin' && analysisDone && month);
+
+            if (auth && trans && month && allAnalysisData[auth]?.[trans]?.[month]) {
+                 await displayResults(allAnalysisData[auth][trans][month]);
             } else {
                  hideElement(elements.userViewReportFeedbackSection);
             }
@@ -2041,7 +2073,7 @@
                 analysis_doc_id: `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`
             };
 
-            if (!reportData.reporter_name || !reportData.report_details || !reportData.authority) {
+            if (!reportData.reporter_name || !reportData.report_details || !reportData.authority || !reportData.transformer_id || !reportData.month) {
                 showError("กรุณากรอกข้อมูลผู้รายงาน, รายละเอียด และเลือกข้อมูลการวิเคราะห์ให้ครบถ้วน");
                 btn.disabled = false; btn.innerHTML = 'ส่งรายงาน';
                 return;
@@ -2069,7 +2101,6 @@
             
             reports.forEach(report => {
                 const row = document.createElement('tr');
-                // *** NEW LOGIC: Use status column ***
                 const isResponded = report.status === 'responded';
                 row.innerHTML = `
                     <td>${new Date(report.created_at).toLocaleDateString('th-TH')}</td>
@@ -2089,7 +2120,6 @@
             const btn = elements.saveAdminSuggestionBtn;
             btn.disabled = true; btn.innerHTML = `<div class="spinner"></div> กำลังบันทึก...`;
             try {
-                // *** NEW LOGIC: Update status along with suggestion ***
                 const { error } = await supabase
                     .from('edit_reports')
                     .update({ 
@@ -2107,6 +2137,58 @@
             }
         }
         
+        async function handleAnalyzeReport() {
+            if (!currentReportId) return;
+            
+            const btn = elements.analyzeReportBtn;
+            const btnText = btn.querySelector('.button-text');
+            const btnSpinner = btn.querySelector('.ai-spinner');
+            
+            btn.disabled = true;
+            btnText.textContent = 'กำลังวิเคราะห์...';
+            showElement(btnSpinner);
+            hideElement(btn.querySelector('svg'));
+            elements.reportAiAnalysisContent.innerHTML = '';
+            hideElement(elements.useAiAnalysisAsSuggestionBtn);
+
+            const reportDetails = elements.detailsReportDetails.textContent;
+            const adminSuggestions = elements.adminSuggestions.value;
+            
+            const prompt = `ในฐานะผู้จัดการฝ่ายวิศวกรรมไฟฟ้า, โปรดวิเคราะห์รายงานการแก้ไขปัญหาระบบไฟฟ้าดังนี้:
+---
+**รายละเอียดการแก้ไขจากผู้ปฏิบัติงาน:**
+${reportDetails}
+---
+**ข้อเสนอแนะจาก Admin:**
+${adminSuggestions || "ไม่มี"}
+---
+โปรดประเมิน:
+1.  **ความถูกต้องของการแก้ไข:** การดำเนินการสอดคล้องกับปัญหาที่อาจเกิดขึ้นหรือไม่?
+2.  **ประสิทธิผลที่คาดหวัง:** การแก้ไขนี้น่าจะช่วยลดค่า Loss ได้มากน้อยเพียงใด?
+3.  **ความเสี่ยงที่อาจเกิดขึ้น:** มีความเสี่ยงหรือผลกระทบข้างเคียงจากการแก้ไขนี้หรือไม่?
+4.  **คำแนะนำเพิ่มเติม:** มีขั้นตอนอื่นที่ควรทำเพิ่มเติมเพื่อยืนยันผลหรือป้องกันปัญหาในอนาคตหรือไม่?
+
+ใช้ภาษาไทย, สรุปให้กระชับ และจัดรูปแบบด้วย Markdown`;
+            
+            try {
+                const analysisText = await callGeminiAPI(prompt);
+                currentReportAiAnalysisText = analysisText; 
+                elements.reportAiAnalysisContent.innerHTML = marked.parse(analysisText);
+                showElement(elements.useAiAnalysisAsSuggestionBtn); 
+                
+                await supabase.from('edit_reports').update({ ai_report_analysis: analysisText }).eq('id', currentReportId);
+                showSuccess('วิเคราะห์รายงานสำเร็จ');
+            } catch (error) {
+                console.error("Error analyzing report:", error);
+                elements.reportAiAnalysisContent.innerHTML = `<p class="text-red-500">เกิดข้อผิดพลาดในการวิเคราะห์: ${error.message}</p>`;
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'วิเคราะห์';
+                hideElement(btnSpinner);
+                showElement(btn.querySelector('svg'));
+            }
+        }
+
         async function handleDeleteReport(reportId) {
             showConfirmModal({
                 title: "ยืนยันการลบรายงาน", text: `คุณต้องการลบรายงานนี้อย่างถาวรใช่หรือไม่?`,
@@ -2123,7 +2205,7 @@
         
         async function checkAndDisplayFeedback() {
             const docId = `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`;
-            if (!docId.includes("null") && !docId.includes("undefined")) {
+            if (elements.viewAuthoritySelect.value && elements.viewTransformerSelect.value && elements.viewMonthSelect.value) {
                  const { data, error } = await supabase
                     .from('edit_reports').select('admin_suggestions')
                     .eq('analysis_doc_id', docId).not('admin_suggestions', 'is', null)
@@ -2173,6 +2255,11 @@
                 const isValid = validateGoogleSheetUrl(elements.meterUrl.value.trim());
                 document.getElementById('detect-mappings-btn').disabled = !isValid;
                 document.getElementById('detect-btn-text').textContent = isValid ? 'ตรวจสอบการจับคู่' : 'ใส่ลิงก์มิเตอร์ก่อน';
+                 updateUrlStatus('meter', isValid);
+            });
+
+            elements.transformerUrl.addEventListener('input', () => {
+                updateUrlStatus('transformer', validateGoogleSheetUrl(elements.transformerUrl.value.trim()));
             });
             
             document.getElementById('detect-mappings-btn').addEventListener('click', detectMappingsFromUrls);
@@ -2183,22 +2270,37 @@
             elements.editReportForm.addEventListener('submit', handleSaveReport);
             elements.saveAdminSuggestionBtn.addEventListener('click', handleSaveAdminSuggestion);
             elements.deleteReportBtn.addEventListener('click', () => handleDeleteReport(currentReportId));
-            elements.analyzeReportBtn.addEventListener('click', () => {}); // Placeholder, implement if needed
-            elements.useAiAnalysisAsSuggestionBtn.addEventListener('click', () => {}); // Placeholder
+            
+            // *** START: AI ANALYSIS FIX ***
+            elements.analyzeReportBtn.addEventListener('click', handleAnalyzeReport);
+            
+            elements.useAiAnalysisAsSuggestionBtn.addEventListener('click', () => {
+                if (currentReportAiAnalysisText) {
+                    elements.adminSuggestions.value = currentReportAiAnalysisText.trim();
+                    elements.adminSuggestions.focus();
+                    showSuccess('คัดลอกบทวิเคราะห์ไปยังช่องข้อเสนอแนะแล้ว');
+                } else {
+                    showError('ไม่มีข้อมูลบทวิเคราะห์ที่จะใช้งานได้');
+                }
+            });
+            // *** END: AI ANALYSIS FIX ***
+
             elements.generateActionPlanBtn.addEventListener('click', generateActionPlan);
         }
         
         function setupSelectorListeners(allData) {
-            elements.viewAuthoritySelect.addEventListener('change', () => {
-                populateTransformerSelector(allData, elements.viewAuthoritySelect.value);
-                elements.viewMonthSelect.innerHTML = '<option value="">-- เลือกเดือน --</option>'; // Clear month
-                loadSelectedData(allData);
+            elements.viewAuthoritySelect.addEventListener('change', (e) => {
+                populateTransformerSelector(allData, e.target.value);
+                elements.viewMonthSelect.innerHTML = '<option value="">-- เลือกเดือน --</option>'; 
+                loadSelectedData();
             });
-            elements.viewTransformerSelect.addEventListener('change', () => {
-                populateMonthSelector(allData, elements.viewAuthoritySelect.value, elements.viewTransformerSelect.value);
-                loadSelectedData(allData);
+            elements.viewTransformerSelect.addEventListener('change', (e) => {
+                populateMonthSelector(allData, elements.viewAuthoritySelect.value, e.target.value);
+                loadSelectedData();
             });
-            elements.viewMonthSelect.addEventListener('change', () => loadSelectedData(allData));
+            elements.viewMonthSelect.addEventListener('change', () => {
+                loadSelectedData();
+            });
         }
 
         function setupAdminTabs() {
@@ -2211,6 +2313,14 @@
                 switchTab(elements.adminReportsTab, elements.adminConfigTab, elements.adminReportsSection, elements.adminConfigSection);
                 fetchAndDisplayReports();
             });
+        }
+        
+        function updateUrlStatus(type, isValid) {
+            const statusEl = document.getElementById(`${type}-url-status`);
+            if (statusEl) {
+                statusEl.innerHTML = `${isValid ? '✔️' : '🔌'} ${type === 'transformer' ? 'หม้อแปลง' : 'มิเตอร์'}: ${isValid ? 'พร้อมใช้งาน' : 'ยังไม่ได้ใส่'}`;
+                statusEl.className = `px-2 py-1 rounded-full text-xs ${isValid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`;
+            }
         }
         
         // --- STARTUP AND INITIALIZATION ---
@@ -2234,18 +2344,17 @@
                 
             await fetchAndProcessInitialData();
             
-            // *** REFACTORED REALTIME LISTENERS ***
-            supabase.channel('public:analysis')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'analysis' }, 
-                () => { console.log('Change in analysis detected. Refetching...'); fetchAndProcessInitialData(); })
-                .subscribe();
-
-            supabase.channel('public:edit_reports')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'edit_reports' }, 
+            supabase.channel('public-changes')
+                .on('postgres_changes', { event: '*', schema: 'public' }, 
                 (payload) => {
-                    console.log('Change in edit_reports detected.', payload.new?.status);
-                    if(currentUser.role === 'admin') { fetchAndDisplayReports(); }
-                    checkAndDisplayFeedback();
+                    console.log('Change received!', payload);
+                    if(payload.table === 'analysis'){
+                         fetchAndProcessInitialData();
+                    }
+                    if(payload.table === 'edit_reports'){
+                         if(currentUser.role === 'admin') { fetchAndDisplayReports(); }
+                         checkAndDisplayFeedback();
+                    }
                 })
                 .subscribe();
             
@@ -2260,3 +2369,4 @@
     </script>
 </body>
 </html>
+```
