@@ -1077,7 +1077,7 @@
 
         // --- GLOBAL STATE ---
         let currentUser = { role: 'user' };
-        let charts = { trend: null, meter: null };
+        let charts = { trend: null, meter: null, highestLoss: null };
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = ''; // To store AI analysis for action plan
@@ -2104,37 +2104,51 @@
         }
 
         // --- AI ANALYSIS & ACTION PLAN (GEMINI API) ---
-        async function callGeminiAPI(prompt) {
-            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-            const payload = { contents: chatHistory };
-            // IMPORTANT: If you are running this outside the intended environment, you must provide your own Google AI API key here.
-            const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-            
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        async function callGeminiAPI(prompt, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { contents: chatHistory };
+                    const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
 
-            if (!response.ok) {
-                 const errorBody = await response.text();
-                 console.error("API Error Body:", errorBody);
-                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
-            }
-            
-            const result = await response.json();
-            
-            if (result.candidates && result.candidates.length > 0 &&
-                result.candidates[0].content && result.candidates[0].content.parts &&
-                result.candidates[0].content.parts.length > 0) {
-                return result.candidates[0].content.parts[0].text;
-            } else {
-                console.error("Unexpected AI response structure:", result);
-                if(result.promptFeedback && result.promptFeedback.blockReason){
-                    throw new Error(`AI request blocked: ${result.promptFeedback.blockReason}`);
+                    if (response.status === 503) {
+                        throw new Error(`API Error: ${response.status} The model is overloaded.`);
+                    }
+
+                    if (!response.ok) {
+                         const errorBody = await response.text();
+                         console.error("API Error Body:", errorBody);
+                         throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        console.error("Unexpected AI response structure:", result);
+                        if(result.promptFeedback && result.promptFeedback.blockReason){
+                            throw new Error(`AI request blocked: ${result.promptFeedback.blockReason}`);
+                        }
+                        throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
+                    }
+                } catch (error) {
+                    console.warn(`Attempt ${i + 1} failed: ${error.message}. Retrying in ${delay / 1000}s...`);
+                    if (i === retries - 1) {
+                        throw error;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
                 }
-                throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
             }
         }
 
