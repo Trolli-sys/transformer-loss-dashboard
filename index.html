@@ -2666,14 +2666,14 @@ ${currentAnalysisText}
                 elements.reportsTableBody.innerHTML = '';
                 reports.forEach(report => {
                     const row = document.createElement('tr');
-                    const hasFeedback = report.admin_suggestions !== null;
+                    const isResponded = report.status === 'responded';
                     row.innerHTML = `
                         <td>${new Date(report.created_at).toLocaleDateString('th-TH')}</td>
                         <td>${report.reporter_name}</td>
                         <td>${report.reporter_affiliation}</td>
                         <td>${report.transformer_id}</td>
                         <td>
-                            ${hasFeedback 
+                            ${isResponded  
                              ? '<span class="status-indicator status-success">ตอบกลับแล้ว</span>' 
                              : '<span class="status-indicator status-warning">รอตรวจสอบ</span>'
                             }
@@ -2711,6 +2711,7 @@ ${currentAnalysisText}
                 if (error) throw error;
                 
                 showSuccess("บันทึกข้อเสนอแนะสำเร็จ");
+                await fetchAndDisplayReports();
                 hideReportDetailsModal();
 
             } catch (error) {
