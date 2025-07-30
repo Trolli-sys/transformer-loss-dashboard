@@ -795,6 +795,19 @@
                         </div>
                     </div>
                 </section>
+                
+                <!-- Highest Loss Chart Section -->
+                <section id="highest-loss-section" class="hidden fade-in">
+                    <div class="glass-card p-6 mb-8">
+                        <h2 class="text-2xl font-bold text-gray-900 flex items-center mb-6">
+                            <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                            10 อันดับหม้อแปลงที่ค่า Loss สูงสุด (ล่าสุด)
+                        </h2>
+                        <div class="chart-container">
+                            <div id="highest-loss-chart"></div>
+                        </div>
+                    </div>
+                </section>
 
                 <!-- Filter Controls -->
                 <div class="glass-card p-6 mb-8">
@@ -1077,7 +1090,7 @@
 
         // --- GLOBAL STATE ---
         let currentUser = { role: 'user' };
-        let charts = { trend: null, meter: null, highestLoss: null };
+        let charts = { trend: null, meter: null };
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = ''; // To store AI analysis for action plan
@@ -1185,6 +1198,8 @@
             // Chart elements
             trendChart: document.getElementById('consumption-trend-chart'),
             meterChart: document.getElementById('meter-consumption-chart'),
+            highestLossSection: document.getElementById('highest-loss-section'),
+            highestLossChart: document.getElementById('highest-loss-chart'),
 
             // KPI elements
             kpiTransformerEnergy: document.getElementById('kpi-transformer-energy'),
@@ -1377,10 +1392,12 @@
             if (analysisDone) {
                 showElement(elements.resultsSection);
                 showElement(elements.overallSummarySection);
+                showElement(elements.highestLossSection);
                 hideElement(elements.userWaitingMessage);
             } else {
                 hideElement(elements.resultsSection);
                 hideElement(elements.overallSummarySection);
+                hideElement(elements.highestLossSection);
                 showElement(elements.userWaitingMessage);
             }
         }
@@ -1865,22 +1882,34 @@
             let totalEnergyOut = 0;
             let totalEnergyIn = 0;
             const uniqueTransformers = new Set();
+            const allTransformersLossData = []; // For the new chart
 
             for (const authority in allData) {
                 for (const transformerKey in allData[authority]) {
-                    if (uniqueTransformers.has(transformerKey)) continue;
-                    uniqueTransformers.add(transformerKey);
-
                     const transformerHistory = allData[authority][transformerKey];
                     const sortedMonths = Object.keys(transformerHistory).sort();
                     if (sortedMonths.length > 0) {
                         const latestMonth = sortedMonths[sortedMonths.length - 1];
                         const latestData = transformerHistory[latestMonth];
                         
-                        totalTransformers += latestData.transformerCount || 0;
-                        totalMeters += latestData.meterCount || 0;
-                        totalEnergyOut += latestData.totalTransformerEnergy || 0;
-                        totalEnergyIn += latestData.totalMeterEnergy || 0;
+                        if (!uniqueTransformers.has(transformerKey)) {
+                            uniqueTransformers.add(transformerKey);
+                            totalTransformers += latestData.transformerCount || 0;
+                            totalMeters += latestData.meterCount || 0;
+                            totalEnergyOut += latestData.totalTransformerEnergy || 0;
+                            totalEnergyIn += latestData.totalMeterEnergy || 0;
+                        }
+
+                        // Collect individual transformer data for the highest loss chart
+                        if (latestData.results) {
+                            latestData.results.forEach(res => {
+                                allTransformersLossData.push({
+                                    transformerId: res.transformerId,
+                                    lossPercent: res.lossPercent,
+                                    authority: latestData.authority
+                                });
+                            });
+                        }
                     }
                 }
             }
@@ -1894,6 +1923,13 @@
             elements.summaryEnergyIn.textContent = totalEnergyIn.toLocaleString('en-US', { maximumFractionDigits: 0 });
             elements.summaryTotalLoss.textContent = totalLoss.toLocaleString('en-US', { maximumFractionDigits: 0 });
             elements.summaryLossPercent.textContent = `${lossPercent.toFixed(2)}%`;
+
+            // Sort and render the highest loss chart
+            const top10Lossy = allTransformersLossData
+                .sort((a, b) => b.lossPercent - a.lossPercent)
+                .slice(0, 10);
+            
+            renderHighestLossChart(top10Lossy);
         }
 
         function updateKeyMetrics(data) {
@@ -2102,6 +2138,72 @@
             charts.meter = new ApexCharts(elements.meterChart, meterOptions);
             charts.meter.render();
         }
+        
+        function renderHighestLossChart(data) {
+            if (charts.highestLoss) {
+                charts.highestLoss.destroy();
+            }
+
+            const options = {
+                series: [{
+                    name: 'Loss (%)',
+                    data: data.map(d => d.lossPercent.toFixed(2))
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 400,
+                    toolbar: {
+                        show: true
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        horizontal: true,
+                        borderRadius: 4,
+                        dataLabels: {
+                            position: 'top',
+                        },
+                    }
+                },
+                dataLabels: {
+                    enabled: true,
+                    offsetX: 40,
+                    style: {
+                        fontSize: '12px',
+                        colors: ['#fff']
+                    },
+                    formatter: function (val) {
+                        return val + "%";
+                    }
+                },
+                xaxis: {
+                    categories: data.map(d => `${d.transformerId} (${d.authority})`),
+                    title: {
+                        text: 'เปอร์เซ็นต์ Loss (%)'
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        show: true,
+                        style: {
+                            fontSize: '12px'
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: (val) => `${val}%`
+                    }
+                },
+                colors: ['#ef4444'],
+                grid: {
+                    borderColor: '#f1f5f9'
+                }
+            };
+
+            charts.highestLoss = new ApexCharts(elements.highestLossChart, options);
+            charts.highestLoss.render();
+        }
 
         // --- AI ANALYSIS & ACTION PLAN (GEMINI API) ---
         async function callGeminiAPI(prompt, retries = 5, delay = 1000) {
@@ -2264,8 +2366,6 @@ ${currentAnalysisText}
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
             const selectedMonth = elements.viewMonthSelect.value;
-            
-            hideElement(elements.userViewReportFeedbackSection);
 
             if (selectedAuthority && selectedTransformer && selectedMonth) {
                 let data = null;
@@ -2277,6 +2377,7 @@ ${currentAnalysisText}
                     renderAppForRole();
                     await displayResults(data);
                 } else {
+                    // This can happen if selectors change and the specific month doesn't exist for the new selection
                     analysisDone = false;
                     renderAppForRole();
                 }
