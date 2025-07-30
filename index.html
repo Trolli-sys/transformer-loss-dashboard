@@ -736,7 +736,6 @@
                                        <th>ผู้รายงาน</th>
                                        <th>สังกัด</th>
                                        <th>หม้อแปลง</th>
-                                       <th>สถานะ</th>
                                        <th>การดำเนินการ</th>
                                    </tr>
                                </thead>
@@ -1854,7 +1853,6 @@
             // Hide action plan and feedback from previous results
             hideElement(elements.actionPlanSection);
             hideElement(elements.actionButtonsContainer);
-            hideElement(elements.userViewReportFeedbackSection);
             
             elements.kpiTransformerEnergy.textContent = data.totalTransformerEnergy.toLocaleString('en-US', {
                 maximumFractionDigits: 2
@@ -1873,43 +1871,30 @@
             updateResultsTable(data);
             renderCharts(data);
             await getAiAnalysis(data.results, avgLossPercent);
-            await checkAndDisplayFeedback();
         }
-        
+
         function calculateAndDisplayOverallSummary(allData) {
             let totalTransformers = 0;
             let totalMeters = 0;
             let totalEnergyOut = 0;
             let totalEnergyIn = 0;
             const uniqueTransformers = new Set();
-            const allTransformersLossData = []; // For the new chart
 
             for (const authority in allData) {
                 for (const transformerKey in allData[authority]) {
+                    if (uniqueTransformers.has(transformerKey)) continue;
+                    uniqueTransformers.add(transformerKey);
+
                     const transformerHistory = allData[authority][transformerKey];
                     const sortedMonths = Object.keys(transformerHistory).sort();
                     if (sortedMonths.length > 0) {
                         const latestMonth = sortedMonths[sortedMonths.length - 1];
                         const latestData = transformerHistory[latestMonth];
                         
-                        if (!uniqueTransformers.has(transformerKey)) {
-                            uniqueTransformers.add(transformerKey);
-                            totalTransformers += latestData.transformerCount || 0;
-                            totalMeters += latestData.meterCount || 0;
-                            totalEnergyOut += latestData.totalTransformerEnergy || 0;
-                            totalEnergyIn += latestData.totalMeterEnergy || 0;
-                        }
-
-                        // Collect individual transformer data for the highest loss chart
-                        if (latestData.results) {
-                            latestData.results.forEach(res => {
-                                allTransformersLossData.push({
-                                    transformerId: res.transformerId,
-                                    lossPercent: res.lossPercent,
-                                    authority: latestData.authority
-                                });
-                            });
-                        }
+                        totalTransformers += latestData.transformerCount || 0;
+                        totalMeters += latestData.meterCount || 0;
+                        totalEnergyOut += latestData.totalTransformerEnergy || 0;
+                        totalEnergyIn += latestData.totalMeterEnergy || 0;
                     }
                 }
             }
@@ -1923,13 +1908,6 @@
             elements.summaryEnergyIn.textContent = totalEnergyIn.toLocaleString('en-US', { maximumFractionDigits: 0 });
             elements.summaryTotalLoss.textContent = totalLoss.toLocaleString('en-US', { maximumFractionDigits: 0 });
             elements.summaryLossPercent.textContent = `${lossPercent.toFixed(2)}%`;
-
-            // Sort and render the highest loss chart
-            const top10Lossy = allTransformersLossData
-                .sort((a, b) => b.lossPercent - a.lossPercent)
-                .slice(0, 10);
-            
-            renderHighestLossChart(top10Lossy);
         }
 
         function updateKeyMetrics(data) {
@@ -2138,72 +2116,6 @@
             charts.meter = new ApexCharts(elements.meterChart, meterOptions);
             charts.meter.render();
         }
-        
-        function renderHighestLossChart(data) {
-            if (charts.highestLoss) {
-                charts.highestLoss.destroy();
-            }
-
-            const options = {
-                series: [{
-                    name: 'Loss (%)',
-                    data: data.map(d => d.lossPercent.toFixed(2))
-                }],
-                chart: {
-                    type: 'bar',
-                    height: 400,
-                    toolbar: {
-                        show: true
-                    }
-                },
-                plotOptions: {
-                    bar: {
-                        horizontal: true,
-                        borderRadius: 4,
-                        dataLabels: {
-                            position: 'top',
-                        },
-                    }
-                },
-                dataLabels: {
-                    enabled: true,
-                    offsetX: 40,
-                    style: {
-                        fontSize: '12px',
-                        colors: ['#fff']
-                    },
-                    formatter: function (val) {
-                        return val + "%";
-                    }
-                },
-                xaxis: {
-                    categories: data.map(d => `${d.transformerId} (${d.authority})`),
-                    title: {
-                        text: 'เปอร์เซ็นต์ Loss (%)'
-                    }
-                },
-                yaxis: {
-                    labels: {
-                        show: true,
-                        style: {
-                            fontSize: '12px'
-                        }
-                    }
-                },
-                tooltip: {
-                    y: {
-                        formatter: (val) => `${val}%`
-                    }
-                },
-                colors: ['#ef4444'],
-                grid: {
-                    borderColor: '#f1f5f9'
-                }
-            };
-
-            charts.highestLoss = new ApexCharts(elements.highestLossChart, options);
-            charts.highestLoss.render();
-        }
 
         // --- AI ANALYSIS & ACTION PLAN (GEMINI API) ---
         async function callGeminiAPI(prompt, retries = 5, delay = 1000) {
@@ -2301,11 +2213,18 @@ Loss เฉลี่ยรวม: ${avgLossPercent.toFixed(2)}%
             hideElement(elements.actionPlanError);
             elements.generateActionPlanBtn.disabled = true;
 
-            const prompt = `จากบทวิเคราะห์ AI ที่ครอบคลุมทั้ง Technical และ Non-technical loss:
+            const prompt = `จากบทวิเคราะห์ AI:
 ---
 ${currentAnalysisText}
 ---
-สร้าง "แผนปฏิบัติการ" (Action Plan) ที่ชัดเจนในรูปแบบตาราง Markdown สำหรับทีมช่างไฟฟ้า โดยมีคอลัมน์: "งานที่ต้องทำ", "หม้อแปลงเป้าหมาย", และ "ความสำคัญ (สูง/กลาง/ต่ำ)"`;
+และอ้างอิงตาม "แบบฟอร์มการตรวจหม้อแปลง (มป.3)" ซึ่งมีรายการตรวจสอบดังนี้:
+- ค่าฉนวน (น้ำมัน, ขดลวด)
+- ค่า Ground
+- การตรวจสอบอุปกรณ์ประกอบ (ตัวถัง, Bushing, Tap Changer, Arcing Horn, ล่อฟ้า, ฟิวส์)
+- การตรวจเปลี่ยนและเติมน้ำมัน (ระดับน้ำมัน, สารดูดความชื้น, ปะเก็น)
+- การตรวจสอบสภาพรับโหลด (กระแส, แรงดัน)
+
+โปรดสร้าง "แผนปฏิบัติการ" (Action Plan) ที่เป็นรูปธรรมสำหรับทีมช่างไฟฟ้า โดยเลือกรายการที่เกี่ยวข้องที่สุดจากแบบฟอร์มการตรวจฯ มาสร้างเป็นแผน จัดรูปแบบเป็นตาราง Markdown ที่มีคอลัมน์: "งานที่ต้องทำ (จากแบบฟอร์ม มป.3)", "หม้อแปลงเป้าหมาย", และ "ความสำคัญ (สูง/กลาง/ต่ำ)"`;
 
             try {
                 const actionPlanText = await callGeminiAPI(prompt);
