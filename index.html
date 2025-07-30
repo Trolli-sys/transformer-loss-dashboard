@@ -2648,6 +2648,8 @@ ${currentAnalysisText}
             }
         }
         
+        // ***** 1. แก้ไขวิธีแสดงสถานะ *****
+        // ฟังก์ชันนี้จะถูกแก้ไขให้ใช้ค่าจาก `report.status` แทนการคำนวณเอง
         async function fetchAndDisplayReports() {
             const { data: reports, error } = await supabase
                 .from('edit_reports')
@@ -2666,6 +2668,8 @@ ${currentAnalysisText}
                 elements.reportsTableBody.innerHTML = '';
                 reports.forEach(report => {
                     const row = document.createElement('tr');
+                    // -- START: โค้ดที่แก้ไข --
+                    // ใช้ค่า status จากฐานข้อมูลโดยตรง ไม่ต้องใช้ hasFeedback แล้ว
                     const isResponded = report.status === 'responded';
                     row.innerHTML = `
                         <td>${new Date(report.created_at).toLocaleDateString('th-TH')}</td>
@@ -2682,6 +2686,7 @@ ${currentAnalysisText}
                             <button class="btn-secondary text-sm view-details-btn">ดูรายละเอียด</button>
                         </td>
                     `;
+                    // -- END: โค้ดที่แก้ไข --
                     row.querySelector('.view-details-btn').addEventListener('click', () => showReportDetailsModal(report));
                     elements.reportsTableBody.appendChild(row);
                 });
@@ -2691,6 +2696,8 @@ ${currentAnalysisText}
             }
         }
 
+        // ***** 2. แก้ไขให้รีเฟรชข้อมูลหลังบันทึก *****
+        // ฟังก์ชันนี้จะถูกแก้ไขให้เรียก fetchAndDisplayReports() ทันทีหลังบันทึกสำเร็จ
         async function handleSaveAdminSuggestion() {
             if (!currentReportId) return;
 
@@ -2711,7 +2718,11 @@ ${currentAnalysisText}
                 if (error) throw error;
                 
                 showSuccess("บันทึกข้อเสนอแนะสำเร็จ");
-                await fetchAndDisplayReports();
+
+                // -- START: โค้ดที่เพิ่มเข้ามา --
+                await fetchAndDisplayReports(); // สั่งให้โหลดข้อมูลใหม่ทันที
+                // -- END: โค้ดที่เพิ่มเข้ามา --
+                
                 hideReportDetailsModal();
 
             } catch (error) {
@@ -3052,13 +3063,15 @@ ${adminSuggestions || "ไม่มี"}
                     .subscribe();
 
                 const reportsChannel = supabase.channel('public:edit_reports')
+                    // ***** 3. แก้ไข Realtime Listener *****
+                    // ลบเงื่อนไข if (currentUser.role === 'admin') ออก
+                    // เพื่อให้หน้าจอของแอดมินทุกคนที่เปิดค้างไว้ อัปเดตพร้อมกัน
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'edit_reports' }, payload => {
                         console.log('Edit reports change received!', payload);
-                        // VVVVVVVV MODIFIED LINE VVVVVVVV
-                        if (currentUser.role === 'admin') {
-                            fetchAndDisplayReports();
-                        }
-                        // ^^^^^^^^ MODIFIED LINE ^^^^^^^^
+                        // -- START: โค้ดที่แก้ไข --
+                        // ไม่ต้องเช็ค role แล้ว เรียกใช้ฟังก์ชันอัปเดตเลย
+                        fetchAndDisplayReports();
+                        // -- END: โค้ดที่แก้ไข --
                     })
                     .subscribe();
                 
