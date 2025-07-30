@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="th">
 
@@ -490,6 +491,14 @@
                             <p class="text-gray-500 text-sm">AI กำลังวิเคราะห์รายงาน...</p>
                         </div>
                         <div id="report-ai-analysis-content" class="prose max-w-none text-gray-600"></div>
+                        <!-- ========== START: MODIFIED SECTION ========== -->
+                        <div class="mt-4 text-right">
+                           <button id="use-ai-analysis-as-suggestion-btn" class="btn-secondary text-sm hidden">
+                               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v3a1 1 0 001 1h8M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M8 7h8m-9 6h6m-1 4h1"></path></svg>
+                               <span>ใช้บทวิเคราะห์นี้เป็นข้อเสนอแนะ</span>
+                           </button>
+                        </div>
+                        <!-- ========== END: MODIFIED SECTION ========== -->
                     </div>
                 </div>
             </div>
@@ -1092,6 +1101,10 @@
         let supabase;
         let allAnalysisData = {}; // Global cache for Supabase data
         let currentReportId = null; // To track which report is being viewed/edited by admin
+        // ========== START: NEW/MODIFIED CODE ==========
+        let currentReportAiAnalysisText = ''; // To store the raw text of the AI report analysis
+        // ========== END: NEW/MODIFIED CODE ==========
+
 
         // --- SUPABASE CONFIG ---
         // IMPORTANT: Replace with your Supabase Project URL and Anon Key
@@ -1141,7 +1154,9 @@
             reportAiAnalysisContent: document.getElementById('report-ai-analysis-content'),
             generateSuggestionAiBtn: document.getElementById('generate-suggestion-ai-btn'),
             deleteReportBtn: document.getElementById('delete-report-btn'),
-
+            // ========== START: NEW/MODIFIED CODE ==========
+            useAiAnalysisAsSuggestionBtn: document.getElementById('use-ai-analysis-as-suggestion-btn'),
+            // ========== END: NEW/MODIFIED CODE ==========
 
             // Auth elements
             adminLoginBtn: document.getElementById('admin-login-btn'),
@@ -1340,6 +1355,19 @@
             elements.detailsReportDetails.textContent = report.report_details;
             elements.adminSuggestions.value = report.admin_suggestions || '';
             elements.reportAiAnalysisContent.innerHTML = report.ai_report_analysis ? marked.parse(report.ai_report_analysis) : '<p class="text-gray-500">ยังไม่มีการวิเคราะห์รายงานนี้</p>';
+
+            // ========== START: NEW/MODIFIED CODE ==========
+            // Hide the 'Use Analysis' button initially when opening the modal.
+            hideElement(elements.useAiAnalysisAsSuggestionBtn);
+            if (report.ai_report_analysis) {
+                 showElement(elements.useAiAnalysisAsSuggestionBtn);
+                 currentReportAiAnalysisText = report.ai_report_analysis;
+            } else {
+                 hideElement(elements.useAiAnalysisAsSuggestionBtn);
+                 currentReportAiAnalysisText = '';
+            }
+            // ========== END: NEW/MODIFIED CODE ==========
+            
             hideElement(elements.reportAiLoader);
             showModal(elements.reportDetailsModalOverlay, elements.reportDetailsModal);
         }
@@ -2284,8 +2312,8 @@
                 try {
                     let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                     const payload = { contents: chatHistory };
-                    const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                    const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ"; // Use a securely managed key
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
                     
                     const response = await fetch(apiUrl, {
                         method: 'POST',
@@ -2692,11 +2720,14 @@ ${currentAnalysisText}
                 showError("เกิดข้อผิดพลาดในการบันทึกข้อเสนอแนะ");
             }
         }
-
+        
+        // ========== START: MODIFIED FUNCTION ==========
         async function handleAnalyzeReport() {
             if (!currentReportId) return;
             showElement(elements.reportAiLoader);
             elements.reportAiAnalysisContent.innerHTML = '';
+            // Hide the 'use analysis' button while a new analysis is running
+            hideElement(elements.useAiAnalysisAsSuggestionBtn);
 
             const reportDetails = elements.detailsReportDetails.textContent;
             const adminSuggestions = elements.adminSuggestions.value;
@@ -2719,7 +2750,16 @@ ${adminSuggestions || "ไม่มี"}
             
             try {
                 const analysisText = await callGeminiAPI(prompt);
+                
+                // Store the raw analysis text
+                currentReportAiAnalysisText = analysisText; 
+                
+                // Render the analysis as HTML
                 elements.reportAiAnalysisContent.innerHTML = marked.parse(analysisText);
+
+                // Show the 'Use Analysis' button now that we have content
+                showElement(elements.useAiAnalysisAsSuggestionBtn); 
+                
                 // Save analysis to DB
                 await supabase
                     .from('edit_reports')
@@ -2732,6 +2772,7 @@ ${adminSuggestions || "ไม่มี"}
                 hideElement(elements.reportAiLoader);
             }
         }
+        // ========== END: MODIFIED FUNCTION ==========
         
         async function handleGenerateAiSuggestion() {
             const btn = elements.generateSuggestionAiBtn;
@@ -2851,6 +2892,7 @@ ${adminSuggestions || "ไม่มี"}
                 const username = document.getElementById('username').value.trim();
                 const password = document.getElementById('password').value.trim();
 
+                // Simple login, replace with secure method in production
                 if (username === 'admin' && password === 'admin123') {
                     currentUser.role = 'admin';
                     hideLoginModal();
@@ -2953,6 +2995,21 @@ ${adminSuggestions || "ไม่มี"}
             elements.analyzeReportBtn.addEventListener('click', handleAnalyzeReport);
             elements.generateSuggestionAiBtn.addEventListener('click', handleGenerateAiSuggestion);
             elements.deleteReportBtn.addEventListener('click', () => handleDeleteReport(currentReportId));
+
+            // ========== START: NEW/MODIFIED CODE ==========
+            // Add event listener for the new button
+            elements.useAiAnalysisAsSuggestionBtn.addEventListener('click', () => {
+                if (currentReportAiAnalysisText) {
+                    // Set the textarea value to the stored raw text
+                    elements.adminSuggestions.value = currentReportAiAnalysisText.trim();
+                    // Optional: Move focus to the textarea for immediate editing
+                    elements.adminSuggestions.focus(); 
+                    showSuccess('คัดลอกบทวิเคราะห์ไปยังช่องข้อเสนอแนะแล้ว');
+                } else {
+                    showError('ไม่มีข้อมูลบทวิเคราะห์ที่จะใช้งานได้');
+                }
+            });
+            // ========== END: NEW/MODIFIED CODE ==========
         }
         
         function setupSelectorListeners(allData) {
@@ -3085,3 +3142,4 @@ ${adminSuggestions || "ไม่มี"}
 </body>
 
 </html>
+```
