@@ -2144,7 +2144,7 @@
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
 
-            const transformerHistory = (allAnalysisData[selectedAuthority] && allAnalysisData[selectedAuthority][selectedTransformer]) || {};
+            const transformerHistory = (allAnalysisData[selectedAuthority] && allAnalysisData[selectedTransformer]) || {};
             const sortedMonths = Object.keys(transformerHistory).sort();
 
             const trendData = sortedMonths.map(month => {
