@@ -133,7 +133,8 @@
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        .input-field, .textarea-field {
+        .input-field,
+        .textarea-field {
             background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(229, 231, 235, 0.5);
             border-radius: 12px;
@@ -143,13 +144,14 @@
             width: 100%;
         }
 
-        .input-field:focus, .textarea-field:focus {
+        .input-field:focus,
+        .textarea-field:focus {
             outline: none;
             border-color: var(--primary-500);
             background: white;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
-        
+
         .textarea-field {
             min-height: 120px;
             resize: vertical;
@@ -260,7 +262,7 @@
             border-top-color: white;
             animation: spin 1s linear infinite;
         }
-        
+
         .ai-spinner {
             width: 24px;
             height: 24px;
@@ -302,7 +304,7 @@
             padding: 1.5rem;
             border: 1px solid rgba(229, 231, 235, 0.3);
         }
-        
+
         .admin-tab {
             padding: 0.75rem 1.5rem;
             cursor: pointer;
@@ -311,9 +313,11 @@
             font-weight: 500;
             color: var(--gray-500);
         }
+
         .admin-tab:hover {
             color: var(--primary-500);
         }
+
         .admin-tab.active {
             color: var(--primary-600);
             border-bottom-color: var(--primary-600);
@@ -375,7 +379,7 @@
             </form>
         </div>
     </div>
-    
+
     <!-- Confirmation Modal -->
     <div id="confirm-modal-overlay" class="modal-overlay hidden">
         <div id="confirm-modal" class="modal-content w-full max-w-md mx-4">
@@ -394,8 +398,10 @@
     <div id="edit-report-modal-overlay" class="modal-overlay hidden">
         <div id="edit-report-modal" class="modal-content w-full max-w-2xl mx-4">
             <form id="edit-report-form" class="glass-card p-8 relative">
-                 <button type="button" id="close-edit-report-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button type="button" id="close-edit-report-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">บันทึกรายงานการแก้ไขหม้อแปลง</h2>
                 <div class="space-y-4">
@@ -419,7 +425,9 @@
                     </div>
                     <div class="pt-4 flex justify-end">
                         <button type="submit" class="btn-primary">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                            </svg>
                             ส่งรายงาน
                         </button>
                     </div>
@@ -433,7 +441,9 @@
         <div id="report-details-modal" class="modal-content w-full max-w-3xl mx-4">
             <div class="glass-card p-8 relative max-h-[90vh] overflow-y-auto">
                 <button type="button" id="close-report-details-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
                 </button>
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">รายละเอียดรายงานการแก้ไข</h2>
                 <div class="space-y-6">
@@ -459,8 +469,10 @@
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="font-semibold text-lg text-gray-800">ข้อเสนอแนะจาก Admin</h3>
                             <button id="generate-suggestion-ai-btn" class="btn-secondary text-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                                <span>สร้างด้วย AI</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>คัดลอกบทวิเคราะห์ AI</span>
                             </button>
                         </div>
                         <div>
@@ -468,8 +480,10 @@
                             <textarea id="admin-suggestions" class="textarea-field" placeholder="เพิ่มความคิดเห็นหรือข้อเสนอแนะเพิ่มเติมที่นี่..."></textarea>
                         </div>
                         <div class="mt-4 flex justify-between items-center">
-                             <button id="delete-report-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <button id="delete-report-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
                                 <span>ลบรายงานนี้</span>
                             </button>
                             <button id="save-admin-suggestion-btn" class="btn-primary">บันทึกข้อเสนอแนะ</button>
@@ -478,10 +492,12 @@
 
                     <!-- AI Analysis of Report -->
                     <div class="p-4 border rounded-lg">
-                         <div class="flex justify-between items-center mb-3">
+                        <div class="flex justify-between items-center mb-3">
                             <h3 class="font-semibold text-lg text-gray-800">บทวิเคราะห์รายงานโดย AI</h3>
                             <button id="analyze-report-btn" class="btn-secondary">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                                </svg>
                                 <span>วิเคราะห์</span>
                             </button>
                         </div>
@@ -690,8 +706,10 @@
                             </div>
 
                             <div class="flex justify-end space-x-4">
-                                 <button id="delete-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 hidden">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                <button id="delete-btn" class="btn-secondary bg-red-50 text-red-600 hover:bg-red-100 border-red-200 hidden">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
                                     <span>ลบข้อมูลที่แสดง</span>
                                 </button>
                                 <button id="calculate-btn" class="btn-primary" disabled>
@@ -720,9 +738,11 @@
 
                     <!-- Admin Reports Section -->
                     <div id="admin-reports-section" class="hidden">
-                         <div class="flex items-center space-x-3 mb-6">
+                        <div class="flex items-center space-x-3 mb-6">
                             <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
                             </div>
                             <h2 class="text-2xl font-bold text-gray-900">รายงานการแก้ไขจากผู้ใช้</h2>
                         </div>
@@ -755,7 +775,9 @@
                 <section id="overall-summary-section" class="hidden fade-in">
                     <div class="glass-card p-6 mb-8">
                         <h2 class="text-2xl font-bold text-gray-900 flex items-center mb-6">
-                            <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3V7h2a4 4 0 004-4v-2m0 16l6-6m-6 6l6 6m-6-6H9m6 0h2a4 4 0 004-4V7h2a4 4 0 00-4-4h-2m-6 0l-6 6m6-6l-6-6"></path></svg>
+                            <svg class="w-6 h-6 text-indigo-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H3V7h2a4 4 0 004-4v-2m0 16l6-6m-6 6l6 6m-6-6H9m6 0h2a4 4 0 004-4V7h2a4 4 0 00-4-4h-2m-6 0l-6 6m6-6l-6-6"></path>
+                            </svg>
                             ภาพรวมข้อมูลทั้งหมด (ล่าสุด)
                         </h2>
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -795,7 +817,7 @@
                         </div>
                     </div>
                 </section>
-                
+
                 <!-- Highest Loss Chart Section -->
                 <section id="highest-loss-section" class="hidden fade-in">
                     <div class="glass-card p-6 mb-8">
@@ -830,7 +852,9 @@
                 <!-- Admin Feedback Section for User -->
                 <div id="user-view-report-feedback-section" class="hidden glass-card p-6 mb-8">
                     <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                        <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+                        <svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                        </svg>
                         ข้อเสนอแนะจากผู้ดูแลระบบ
                     </h3>
                     <div id="user-view-feedback-content" class="bg-green-50 border-l-4 border-green-400 p-4 rounded-r-lg text-green-800">
@@ -970,7 +994,7 @@
                     <!-- AI Analysis -->
                     <div class="chart-container">
                         <div class="flex justify-between items-start">
-                             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
                                 <svg class="w-5 h-5 text-purple-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                                 </svg>
@@ -984,7 +1008,7 @@
                         </div>
 
                         <div id="ai-analysis-content" class="prose max-w-none text-gray-600 hidden"></div>
-                        
+
                         <div id="action-buttons-container" class="mt-4 space-y-2 hidden">
                             <button id="generate-action-plan-btn" class="btn-primary w-full">✨ สร้างแผนปฏิบัติการ</button>
                             <button id="show-edit-report-modal-btn" class="btn-secondary w-full">📝 บันทึกการแก้ไขตามบทวิเคราะห์</button>
@@ -1002,7 +1026,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Action Plan Section -->
                         <div id="action-plan-section" class="mt-6 hidden">
                             <h4 class="text-md font-bold text-gray-800 mb-4 flex items-center">
@@ -1080,11 +1104,19 @@
     </div>
 
     <script type="module">
-        const { createClient } = window.supabase;
+        const {
+            createClient
+        } = window.supabase;
 
         // --- GLOBAL STATE ---
-        let currentUser = { role: 'user' };
-        let charts = { trend: null, meter: null, highestLoss: null }; // Added highestLoss chart
+        let currentUser = {
+            role: 'user'
+        };
+        let charts = {
+            trend: null,
+            meter: null,
+            highestLoss: null
+        }; // Added highestLoss chart
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = ''; // To store AI analysis for action plan
@@ -1107,7 +1139,7 @@
             loginForm: document.getElementById('login-form'),
             loginError: document.getElementById('login-error'),
             closeModalBtn: document.getElementById('close-modal-btn'),
-            
+
             // Confirmation Modal elements
             confirmModalOverlay: document.getElementById('confirm-modal-overlay'),
             confirmModal: document.getElementById('confirm-modal'),
@@ -1213,7 +1245,7 @@
             aiErrorText: document.getElementById('ai-error-text'),
             actionButtonsContainer: document.getElementById('action-buttons-container'),
             generateActionPlanBtn: document.getElementById('generate-action-plan-btn'),
-            
+
             // Action Plan elements
             actionPlanSection: document.getElementById('action-plan-section'),
             actionPlanLoader: document.getElementById('action-plan-loader'),
@@ -1306,7 +1338,7 @@
                 hideElement(modal);
             }, 300);
         }
-        
+
         function showLoginModal() {
             if (elements.loginError) elements.loginError.textContent = '';
             hideElement(elements.loginError);
@@ -1348,17 +1380,23 @@
             hideModal(elements.reportDetailsModalOverlay, elements.reportDetailsModal);
             currentReportId = null;
         }
-        
-        function showConfirmModal({ title, text, onConfirm }) {
+
+        function showConfirmModal({
+            title,
+            text,
+            onConfirm
+        }) {
             elements.confirmModalTitle.textContent = title;
             elements.confirmModalText.textContent = text;
-            
+
             const confirmHandler = () => {
                 onConfirm();
                 hideConfirmModal();
             };
-            
-            elements.confirmModalConfirmBtn.addEventListener('click', confirmHandler, { once: true });
+
+            elements.confirmModalConfirmBtn.addEventListener('click', confirmHandler, {
+                once: true
+            });
             showModal(elements.confirmModalOverlay, elements.confirmModal);
         }
 
@@ -1379,7 +1417,7 @@
             document.querySelectorAll('.admin-only').forEach(el =>
                 toggleElement(el, isAdmin)
             );
-            
+
             toggleElement(elements.deleteBtn, isAdmin && analysisDone);
 
 
@@ -1395,9 +1433,12 @@
                 showElement(elements.userWaitingMessage);
             }
         }
-        
+
         async function fetchAndProcessInitialData() {
-            const { data, error } = await supabase.from('analysis').select('*');
+            const {
+                data,
+                error
+            } = await supabase.from('analysis').select('*');
             if (error) {
                 console.error("Error fetching initial data:", error);
                 showError("ไม่สามารถดึงข้อมูลเริ่มต้นได้");
@@ -1413,13 +1454,13 @@
                 }
                 const transformerKey = analysisData.mappings.map(m => m.transformerId).join('_');
                 const month = row.doc_id.split('_').pop();
-                 if (!allData[analysisData.authority][transformerKey]) {
+                if (!allData[analysisData.authority][transformerKey]) {
                     allData[analysisData.authority][transformerKey] = {};
                 }
                 allData[analysisData.authority][transformerKey][month] = analysisData;
                 hasData = true;
             });
-            
+
             allAnalysisData = allData;
             console.log("Initial data processed:", allAnalysisData);
 
@@ -1428,21 +1469,21 @@
             if (hasData) {
                 analysisDone = true;
                 populateSelectors(allAnalysisData);
-                
+
                 const authorities = Object.keys(allAnalysisData).sort();
                 const latestAuthority = authorities[authorities.length - 1];
                 elements.viewAuthoritySelect.value = latestAuthority;
-                
+
                 populateTransformerSelector(allAnalysisData, latestAuthority);
                 const transformers = Object.keys(allAnalysisData[latestAuthority] || {}).sort();
                 const latestTransformer = transformers.length > 0 ? transformers[transformers.length - 1] : '';
                 elements.viewTransformerSelect.value = latestTransformer;
 
                 populateMonthSelector(allAnalysisData, latestAuthority, latestTransformer);
-                const months = Object.keys(allAnalysisData[latestAuthority]?.[latestTransformer] || {}).sort();
+                const months = Object.keys(allAnalysisData[latestAuthority] ? .[latestTransformer] || {}).sort();
                 const latestMonth = months.length > 0 ? months[months.length - 1] : '';
                 elements.viewMonthSelect.value = latestMonth;
-                
+
                 loadSelectedData(allAnalysisData);
             } else {
                 analysisDone = false;
@@ -1669,12 +1710,19 @@
                     mappings: mappings,
                     lastUpdated: new Date().toISOString()
                 };
-                
+
                 const docId = `${authorityName}_${mappings.map(m => m.transformerId).join('_')}_${selectedMonthStr}`;
-                
-                const { error } = await supabase
+
+                const {
+                    error
+                } = await supabase
                     .from('analysis')
-                    .upsert({ doc_id: docId, data: dataToSave }, { onConflict: 'doc_id' });
+                    .upsert({
+                        doc_id: docId,
+                        data: dataToSave
+                    }, {
+                        onConflict: 'doc_id'
+                    });
 
                 if (error) throw error;
 
@@ -1738,7 +1786,11 @@
             });
 
             if (isNaN(energy) || energy < 0) {
-                console.warn(`การคำนวณพลังงานหม้อแปลง ${transformerId} ได้ผลลัพธ์ติดลบหรือผิดพลาด`, {startKwh, endKwh, energy});
+                console.warn(`การคำนวณพลังงานหม้อแปลง ${transformerId} ได้ผลลัพธ์ติดลบหรือผิดพลาด`, {
+                    startKwh,
+                    endKwh,
+                    energy
+                });
             }
 
             return {
@@ -1848,7 +1900,7 @@
             // Hide action plan and feedback from previous results
             hideElement(elements.actionPlanSection);
             hideElement(elements.actionButtonsContainer);
-            
+
             elements.kpiTransformerEnergy.textContent = data.totalTransformerEnergy.toLocaleString('en-US', {
                 maximumFractionDigits: 2
             });
@@ -1885,7 +1937,7 @@
                     if (sortedMonths.length > 0) {
                         const latestMonth = sortedMonths[sortedMonths.length - 1];
                         const latestData = transformerHistory[latestMonth];
-                        
+
                         totalTransformers += latestData.transformerCount || 0;
                         totalMeters += latestData.meterCount || 0;
                         totalEnergyOut += latestData.totalTransformerEnergy || 0;
@@ -1899,9 +1951,15 @@
 
             elements.summaryTotalTransformers.textContent = totalTransformers.toLocaleString();
             elements.summaryTotalMeters.textContent = totalMeters.toLocaleString();
-            elements.summaryEnergyOut.textContent = totalEnergyOut.toLocaleString('en-US', { maximumFractionDigits: 0 });
-            elements.summaryEnergyIn.textContent = totalEnergyIn.toLocaleString('en-US', { maximumFractionDigits: 0 });
-            elements.summaryTotalLoss.textContent = totalLoss.toLocaleString('en-US', { maximumFractionDigits: 0 });
+            elements.summaryEnergyOut.textContent = totalEnergyOut.toLocaleString('en-US', {
+                maximumFractionDigits: 0
+            });
+            elements.summaryEnergyIn.textContent = totalEnergyIn.toLocaleString('en-US', {
+                maximumFractionDigits: 0
+            });
+            elements.summaryTotalLoss.textContent = totalLoss.toLocaleString('en-US', {
+                maximumFractionDigits: 0
+            });
             elements.summaryLossPercent.textContent = `${lossPercent.toFixed(2)}%`;
 
             // Call the new function to render the highest loss chart
@@ -1986,7 +2044,7 @@
                     }
                 }
             }
-            
+
             const uniqueLossData = Array.from(new Map(latestLossData.map(item => [item.transformerId, item])).values());
 
             const topTenLoss = uniqueLossData
@@ -2020,7 +2078,9 @@
                 chart: {
                     type: 'bar',
                     height: 400,
-                    toolbar: { show: true },
+                    toolbar: {
+                        show: true
+                    },
                     animations: {
                         enabled: true,
                         easing: 'easeinout',
@@ -2037,7 +2097,7 @@
                 colors: barColors,
                 dataLabels: {
                     enabled: true,
-                    formatter: function (val) {
+                    formatter: function(val) {
                         return val + "%";
                     },
                     offsetY: -20,
@@ -2056,7 +2116,12 @@
                 },
                 xaxis: {
                     categories: topTenLoss.map(d => d.transformerId),
-                    title: { text: 'รหัสหม้อแปลง', style: { color: '#6b7280' } },
+                    title: {
+                        text: 'รหัสหม้อแปลง',
+                        style: {
+                            color: '#6b7280'
+                        }
+                    },
                     labels: {
                         style: {
                             colors: '#374151',
@@ -2065,7 +2130,12 @@
                     }
                 },
                 yaxis: {
-                    title: { text: 'เปอร์เซ็นต์ Loss (%)', style: { color: '#6b7280' } },
+                    title: {
+                        text: 'เปอร์เซ็นต์ Loss (%)',
+                        style: {
+                            color: '#6b7280'
+                        }
+                    },
                     labels: {
                         formatter: (val) => val.toFixed(0) + '%'
                     }
@@ -2090,12 +2160,14 @@
                 tooltip: {
                     theme: 'dark',
                     y: {
-                        formatter: function (val) {
+                        formatter: function(val) {
                             return val + " %"
                         }
                     },
                     x: {
-                        formatter: function(val, { dataPointIndex }) {
+                        formatter: function(val, {
+                            dataPointIndex
+                        }) {
                             const transformer = topTenLoss[dataPointIndex];
                             return `หม้อแปลง: ${transformer.transformerId} (${transformer.authority})`;
                         }
@@ -2110,13 +2182,13 @@
                     },
                 },
                 noData: {
-                  text: 'กำลังรอข้อมูลเพื่อสร้างกราฟ...',
-                  align: 'center',
-                  verticalAlign: 'middle',
-                  style: {
-                    color: '#6b7280',
-                    fontSize: '16px',
-                  }
+                    text: 'กำลังรอข้อมูลเพื่อสร้างกราฟ...',
+                    align: 'center',
+                    verticalAlign: 'middle',
+                    style: {
+                        color: '#6b7280',
+                        fontSize: '16px',
+                    }
                 }
             };
 
@@ -2282,14 +2354,23 @@
         async function callGeminiAPI(prompt, retries = 5, delay = 1000) {
             for (let i = 0; i < retries; i++) {
                 try {
-                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                    const payload = { contents: chatHistory };
-                    const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                    
+                    let chatHistory = [{
+                        role: "user",
+                        parts: [{
+                            text: prompt
+                        }]
+                    }];
+                    const payload = {
+                        contents: chatHistory
+                    };
+                    const apiKey = ""; // API Key will be injected by the environment
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
                     const response = await fetch(apiUrl, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(payload)
                     });
 
@@ -2298,21 +2379,21 @@
                     }
 
                     if (!response.ok) {
-                         const errorBody = await response.text();
-                         console.error("API Error Body:", errorBody);
-                         throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                        const errorBody = await response.text();
+                        console.error("API Error Body:", errorBody);
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
                     }
-                    
+
                     const result = await response.json();
-                    
+
                     if (result.candidates && result.candidates.length > 0 &&
                         result.candidates[0].content && result.candidates[0].content.parts &&
                         result.candidates[0].content.parts.length > 0) {
                         return result.candidates[0].content.parts[0].text;
                     } else {
                         console.error("Unexpected AI response structure:", result);
-                        if(result.promptFeedback && result.promptFeedback.blockReason){
-                             throw new Error(`AI request blocked: ${result.promptFeedback.blockReason}`);
+                        if (result.promptFeedback && result.promptFeedback.blockReason) {
+                            throw new Error(`AI request blocked: ${result.promptFeedback.blockReason}`);
                         }
                         throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
                     }
@@ -2462,11 +2543,11 @@ ${currentAnalysisText}
                     renderAppForRole();
                 }
             } else {
-                 analysisDone = Object.keys(allData).length > 0;
-                 renderAppForRole();
+                analysisDone = Object.keys(allData).length > 0;
+                renderAppForRole();
             }
         }
-        
+
         async function deleteCurrentAnalysis() {
             const selectedAuthority = elements.viewAuthoritySelect.value;
             const selectedTransformer = elements.viewTransformerSelect.value;
@@ -2478,20 +2559,22 @@ ${currentAnalysisText}
             }
 
             const docId = `${selectedAuthority}_${selectedTransformer}_${selectedMonth}`;
-            
+
             showConfirmModal({
                 title: "ยืนยันการลบข้อมูล",
                 text: `คุณต้องการลบข้อมูลการวิเคราะห์ของเดือน ${selectedMonth} สำหรับ ${selectedAuthority} ใช่หรือไม่?`,
                 onConfirm: async () => {
                     console.log(`Deleting from Supabase with id: ${docId}`);
                     try {
-                        const { error } = await supabase
+                        const {
+                            error
+                        } = await supabase
                             .from('analysis')
                             .delete()
                             .eq('doc_id', docId);
 
                         if (error) throw error;
-                        
+
                         showSuccess("ลบข้อมูลสำเร็จแล้ว");
                         // The onSnapshot listener will automatically update the UI.
                     } catch (error) {
@@ -2604,7 +2687,7 @@ ${currentAnalysisText}
                 analysis_doc_id: `${elements.viewAuthoritySelect.value}_${elements.viewTransformerSelect.value}_${elements.viewMonthSelect.value}`
             };
 
-            // Enhanced validation
+             // Enhanced validation
             if (!reportData.reporter_name || !reportData.reporter_position || !reportData.reporter_affiliation || !reportData.report_details) {
                 showError("กรุณากรอกข้อมูลผู้รายงานและรายละเอียดการแก้ไขให้ครบถ้วน");
                 submitButton.disabled = false;
