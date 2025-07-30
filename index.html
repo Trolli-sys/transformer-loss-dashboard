@@ -799,13 +799,7 @@
                 <!-- Highest Loss Chart Section -->
                 <section id="highest-loss-section" class="hidden fade-in">
                     <div class="glass-card p-6 mb-8">
-                        <h2 class="text-2xl font-bold text-gray-900 flex items-center mb-6">
-                            <svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                            10 อันดับหม้อแปลงที่ค่า Loss สูงสุด (ล่าสุด)
-                        </h2>
-                        <div class="chart-container">
-                            <div id="highest-loss-chart"></div>
-                        </div>
+                        <div id="highest-loss-chart"></div>
                     </div>
                 </section>
 
@@ -1972,7 +1966,7 @@
             const latestLossData = [];
 
             for (const authority in allData) {
-                for (const transformerKey in allData[authority]) { // transformerKey is the composite key
+                for (const transformerKey in allData[authority]) {
                     const transformerHistory = allData[authority][transformerKey];
                     const sortedMonths = Object.keys(transformerHistory).sort();
 
@@ -1992,7 +1986,7 @@
                     }
                 }
             }
-
+            
             const uniqueLossData = Array.from(new Map(latestLossData.map(item => [item.transformerId, item])).values());
 
             const topTenLoss = uniqueLossData
@@ -2008,6 +2002,16 @@
                 return;
             }
 
+            const getBarColor = (value) => {
+                if (value > 20) return '#b91c1c'; // dark red
+                if (value > 15) return '#ef4444'; // red
+                if (value > 10) return '#f97316'; // orange
+                if (value > 5) return '#f59e0b'; // amber
+                return '#10b981'; // green for normal
+            };
+
+            const barColors = topTenLoss.map(d => getBarColor(d.lossPercent));
+
             const options = {
                 series: [{
                     name: 'Loss (%)',
@@ -2015,34 +2019,76 @@
                 }],
                 chart: {
                     type: 'bar',
-                    height: 350,
-                    toolbar: { show: true }
+                    height: 400,
+                    toolbar: { show: true },
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 800,
+                    }
                 },
                 plotOptions: {
                     bar: {
-                        horizontal: false,
-                        columnWidth: '60%',
-                        borderRadius: 5,
+                        columnWidth: '55%',
+                        borderRadius: 8,
+                        distributed: true,
                     },
                 },
-                dataLabels: { enabled: false },
+                colors: barColors,
+                dataLabels: {
+                    enabled: true,
+                    formatter: function (val) {
+                        return val + "%";
+                    },
+                    offsetY: -20,
+                    style: {
+                        fontSize: '12px',
+                        colors: ["#304758"]
+                    }
+                },
+                legend: {
+                    show: false
+                },
                 stroke: {
                     show: true,
                     width: 2,
                     colors: ['transparent']
                 },
                 xaxis: {
-                    categories: topTenLoss.map(d => `${d.transformerId}`),
-                    title: { text: 'รหัสหม้อแปลง' }
+                    categories: topTenLoss.map(d => d.transformerId),
+                    title: { text: 'รหัสหม้อแปลง', style: { color: '#6b7280' } },
+                    labels: {
+                        style: {
+                            colors: '#374151',
+                            fontSize: '12px'
+                        }
+                    }
                 },
                 yaxis: {
-                    title: { text: 'เปอร์เซ็นต์ Loss (%)' }
+                    title: { text: 'เปอร์เซ็นต์ Loss (%)', style: { color: '#6b7280' } },
+                    labels: {
+                        formatter: (val) => val.toFixed(0) + '%'
+                    }
                 },
-                fill: {
-                    opacity: 1,
-                    colors: ['#ef4444'] // Red color for loss
+                title: {
+                    text: '10 อันดับหม้อแปลงที่ค่า Loss สูงสุด',
+                    align: 'left',
+                    style: {
+                        fontSize: '22px',
+                        fontWeight: 'bold',
+                        color: '#111827'
+                    }
+                },
+                subtitle: {
+                    text: 'ข้อมูลล่าสุดจากผลการวิเคราะห์ทั้งหมดในระบบ',
+                    align: 'left',
+                    style: {
+                        fontSize: '14px',
+                        color: '#6b7280'
+                    }
                 },
                 tooltip: {
+                    theme: 'dark',
                     y: {
                         formatter: function (val) {
                             return val + " %"
@@ -2055,15 +2101,29 @@
                         }
                     }
                 },
-                 grid: {
-                    borderColor: '#f1f5f9',
-                    strokeDashArray: 3
+                grid: {
+                    borderColor: '#e5e7eb',
+                    strokeDashArray: 4,
+                    row: {
+                        colors: ['#f9fafb', 'transparent'],
+                        opacity: 0.5
+                    },
+                },
+                noData: {
+                  text: 'กำลังรอข้อมูลเพื่อสร้างกราฟ...',
+                  align: 'center',
+                  verticalAlign: 'middle',
+                  style: {
+                    color: '#6b7280',
+                    fontSize: '16px',
+                  }
                 }
             };
 
             charts.highestLoss = new ApexCharts(elements.highestLossChart, options);
             charts.highestLoss.render();
         }
+
 
         function renderTrendChart(data) {
             const selectedAuthority = elements.viewAuthoritySelect.value;
@@ -3025,3 +3085,13 @@ ${adminSuggestions || "ไม่มี"}
 </body>
 
 </html>
+
+        async function handleAnalyzeReport() {
+            if (!currentReportId) return;
+            showElement(elements.reportAiLoader);
+            elements.reportAiAnalysisContent.innerHTML = '';
+
+            const reportDetails = elements.detailsReportDetails.textContent;
+            const adminSuggestions = elements.adminSuggestions.value;
+
+            const prompt = `ในฐานะผู้จัดการฝ่ายวิ
