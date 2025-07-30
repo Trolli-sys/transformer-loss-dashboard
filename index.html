@@ -1880,6 +1880,7 @@
             updateResultsTable(data);
             renderCharts(data);
             await getAiAnalysis(data.results, avgLossPercent);
+            await checkAndDisplayFeedback();
         }
 
         function calculateAndDisplayOverallSummary(allData) {
