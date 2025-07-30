@@ -3085,13 +3085,3 @@ ${adminSuggestions || "ไม่มี"}
 </body>
 
 </html>
-
-        async function handleAnalyzeReport() {
-            if (!currentReportId) return;
-            showElement(elements.reportAiLoader);
-            elements.reportAiAnalysisContent.innerHTML = '';
-
-            const reportDetails = elements.detailsReportDetails.textContent;
-            const adminSuggestions = elements.adminSuggestions.value;
-
-            const prompt = `ในฐานะผู้จัดการฝ่ายวิ
