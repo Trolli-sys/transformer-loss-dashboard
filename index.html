@@ -1890,7 +1890,7 @@
             hideElement(elements.actionPlanSection);
             
             const currentDataSummary = (results || []).map(r => `- หม้อแปลง ${r.transformerId}: Loss ${r.lossPercent.toFixed(2)}%`).join('\n');
-            const prompt = `ในฐานะผู้เชี่ยวชาญด้านระบบไฟฟ้า, จากข้อมูลค่า Loss ต่อไปนี้:
+            const prompt = `ในฐานะผู้เชี่ยวชาญด้านระบบไฟฟ้า, จากข้อมูลค่า Loss , หม้อแปลง , มิเตอร์ และPower factor ต่อไปนี้:
 
 ${currentDataSummary}
 
