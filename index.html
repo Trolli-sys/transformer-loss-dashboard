@@ -458,10 +458,7 @@
                     <div class="p-4 border rounded-lg">
                         <div class="flex justify-between items-center mb-3">
                             <h3 class="font-semibold text-lg text-gray-800">ข้อเสนอแนะจาก Admin</h3>
-                            <button id="generate-suggestion-ai-btn" class="btn-secondary text-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                                <span>สร้างด้วย AI</span>
-                            </button>
+                            <!-- "Generate with AI" button has been removed -->
                         </div>
                         <div>
                             <label for="admin-suggestions" class="block text-sm font-medium text-gray-700 mb-2">เพิ่ม/แก้ไขข้อเสนอแนะ</label>
@@ -490,14 +487,12 @@
                             <p class="text-gray-500 text-sm">AI กำลังวิเคราะห์รายงาน...</p>
                         </div>
                         <div id="report-ai-analysis-content" class="prose max-w-none text-gray-600"></div>
-                        <!-- ========== START: MODIFIED SECTION ========== -->
                         <div class="mt-4 text-right">
                            <button id="use-ai-analysis-as-suggestion-btn" class="btn-secondary text-sm hidden">
                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v3a1 1 0 001 1h8M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2M8 7h8m-9 6h6m-1 4h1"></path></svg>
                                <span>ใช้บทวิเคราะห์นี้เป็นข้อเสนอแนะ</span>
                            </button>
                         </div>
-                        <!-- ========== END: MODIFIED SECTION ========== -->
                     </div>
                 </div>
             </div>
@@ -1092,18 +1087,15 @@
 
         // --- GLOBAL STATE ---
         let currentUser = { role: 'user' };
-        let charts = { trend: null, meter: null, highestLoss: null }; // Added highestLoss chart
+        let charts = { trend: null, meter: null, highestLoss: null };
         let analysisDone = false;
         let transformerMeterMappings = [];
-        let currentAnalysisText = ''; // To store AI analysis for action plan
-        let currentDataSummary = ''; // To store data summary for action plan
+        let currentAnalysisText = '';
+        let currentDataSummary = '';
         let supabase;
-        let allAnalysisData = {}; // Global cache for Supabase data
-        let currentReportId = null; // To track which report is being viewed/edited by admin
-        // ========== START: NEW/MODIFIED CODE ==========
-        let currentReportAiAnalysisText = ''; // To store the raw text of the AI report analysis
-        // ========== END: NEW/MODIFIED CODE ==========
-
+        let allAnalysisData = {};
+        let currentReportId = null;
+        let currentReportAiAnalysisText = '';
 
         // --- SUPABASE CONFIG ---
         // IMPORTANT: Replace with your Supabase Project URL and Anon Key
@@ -1151,11 +1143,8 @@
             analyzeReportBtn: document.getElementById('analyze-report-btn'),
             reportAiLoader: document.getElementById('report-ai-loader'),
             reportAiAnalysisContent: document.getElementById('report-ai-analysis-content'),
-            generateSuggestionAiBtn: document.getElementById('generate-suggestion-ai-btn'),
             deleteReportBtn: document.getElementById('delete-report-btn'),
-            // ========== START: NEW/MODIFIED CODE ==========
             useAiAnalysisAsSuggestionBtn: document.getElementById('use-ai-analysis-as-suggestion-btn'),
-            // ========== END: NEW/MODIFIED CODE ==========
 
             // Auth elements
             adminLoginBtn: document.getElementById('admin-login-btn'),
@@ -1355,8 +1344,7 @@
             elements.adminSuggestions.value = report.admin_suggestions || '';
             elements.reportAiAnalysisContent.innerHTML = report.ai_report_analysis ? marked.parse(report.ai_report_analysis) : '<p class="text-gray-500">ยังไม่มีการวิเคราะห์รายงานนี้</p>';
 
-            // ========== START: NEW/MODIFIED CODE ==========
-            // Hide the 'Use Analysis' button initially when opening the modal.
+            // Hide the 'Use Analysis' button initially.
             hideElement(elements.useAiAnalysisAsSuggestionBtn);
             if (report.ai_report_analysis) {
                  showElement(elements.useAiAnalysisAsSuggestionBtn);
@@ -1365,7 +1353,6 @@
                  hideElement(elements.useAiAnalysisAsSuggestionBtn);
                  currentReportAiAnalysisText = '';
             }
-            // ========== END: NEW/MODIFIED CODE ==========
             
             hideElement(elements.reportAiLoader);
             showModal(elements.reportDetailsModalOverlay, elements.reportDetailsModal);
@@ -2311,7 +2298,7 @@
                 try {
                     let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
                     const payload = { contents: chatHistory };
-                    const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ"; // Use a securely managed key
+                    const apiKey = "AIzaSyDwU3rcd0Lr5hS9BsBPcIXitu5YL-IEONQ";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
                     
                     const response = await fetch(apiUrl, {
@@ -2706,26 +2693,40 @@ ${currentAnalysisText}
 
         async function handleSaveAdminSuggestion() {
             if (!currentReportId) return;
-            const suggestions = elements.adminSuggestions.value;
+
+            const btn = elements.saveAdminSuggestionBtn;
+            const originalBtnHtml = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<div class="spinner" style="width: 20px; height: 20px; border-width: 2px;"></div> <span>กำลังบันทึก...</span>`;
+
+            const suggestions = elements.adminSuggestions.value.trim();
+
             try {
                 const { error } = await supabase
                     .from('edit_reports')
                     .update({ admin_suggestions: suggestions })
                     .eq('id', currentReportId);
+                
                 if (error) throw error;
+                
                 showSuccess("บันทึกข้อเสนอแนะสำเร็จ");
+                hideReportDetailsModal();
+                await fetchAndDisplayReports(); 
+
             } catch (error) {
                 console.error("Error saving suggestion:", error);
                 showError("เกิดข้อผิดพลาดในการบันทึกข้อเสนอแนะ");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
             }
         }
         
-        // ========== START: MODIFIED FUNCTION ==========
         async function handleAnalyzeReport() {
             if (!currentReportId) return;
             showElement(elements.reportAiLoader);
             elements.reportAiAnalysisContent.innerHTML = '';
-            // Hide the 'use analysis' button while a new analysis is running
             hideElement(elements.useAiAnalysisAsSuggestionBtn);
 
             const reportDetails = elements.detailsReportDetails.textContent;
@@ -2750,16 +2751,10 @@ ${adminSuggestions || "ไม่มี"}
             try {
                 const analysisText = await callGeminiAPI(prompt);
                 
-                // Store the raw analysis text
                 currentReportAiAnalysisText = analysisText; 
-                
-                // Render the analysis as HTML
                 elements.reportAiAnalysisContent.innerHTML = marked.parse(analysisText);
-
-                // Show the 'Use Analysis' button now that we have content
                 showElement(elements.useAiAnalysisAsSuggestionBtn); 
                 
-                // Save analysis to DB
                 await supabase
                     .from('edit_reports')
                     .update({ ai_report_analysis: analysisText })
@@ -2771,34 +2766,7 @@ ${adminSuggestions || "ไม่มี"}
                 hideElement(elements.reportAiLoader);
             }
         }
-        // ========== END: MODIFIED FUNCTION ==========
         
-        async function handleGenerateAiSuggestion() {
-            const btn = elements.generateSuggestionAiBtn;
-            if (!btn) return;
-            const originalBtnContent = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = `<div class="ai-spinner" style="width: 16px; height: 16px; border-width: 2px; border-top-color: var(--primary-500);"></div>`;
-
-            const reportDetails = elements.detailsReportDetails.textContent;
-            const prompt = `จากรายงานการแก้ไขของผู้ปฏิบัติงาน:
-        ---
-        ${reportDetails}
-        ---
-        ในฐานะผู้ดูแลระบบ โปรดเขียนข้อเสนอแนะสั้นๆ ที่ให้กำลังใจและเป็นประโยชน์แก่ผู้ปฏิบัติงาน ควรมีการขอบคุณสำหรับการรายงาน และอาจจะเสนอแนะขั้นตอนต่อไป (ถ้ามี) ให้ใช้ภาษาไทยที่สุภาพและเป็นทางการ`;
-
-            try {
-                const suggestionText = await callGeminiAPI(prompt);
-                elements.adminSuggestions.value = suggestionText.trim();
-            } catch (error) {
-                console.error("Error generating AI suggestion:", error);
-                showError("ไม่สามารถสร้างข้อเสนอแนะด้วย AI ได้");
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = originalBtnContent;
-            }
-        }
-
         async function handleDeleteReport(reportId) {
             if (!reportId) return;
 
@@ -2817,7 +2785,6 @@ ${adminSuggestions || "ไม่มี"}
                         
                         showSuccess("ลบรายงานสำเร็จแล้ว");
                         hideReportDetailsModal();
-                        // The onSnapshot listener will automatically update the reports list.
                     } catch (error) {
                         console.error("Error deleting report:", error);
                         showError(`เกิดข้อผิดพลาดในการลบรายงาน: ${error.message}`);
@@ -2891,7 +2858,6 @@ ${adminSuggestions || "ไม่มี"}
                 const username = document.getElementById('username').value.trim();
                 const password = document.getElementById('password').value.trim();
 
-                // Simple login, replace with secure method in production
                 if (username === 'admin' && password === 'admin123') {
                     currentUser.role = 'admin';
                     hideLoginModal();
@@ -2992,29 +2958,22 @@ ${adminSuggestions || "ไม่มี"}
             });
             elements.saveAdminSuggestionBtn.addEventListener('click', handleSaveAdminSuggestion);
             elements.analyzeReportBtn.addEventListener('click', handleAnalyzeReport);
-            elements.generateSuggestionAiBtn.addEventListener('click', handleGenerateAiSuggestion);
             elements.deleteReportBtn.addEventListener('click', () => handleDeleteReport(currentReportId));
 
-            // ========== START: NEW/MODIFIED CODE ==========
-            // Add event listener for the new button
             elements.useAiAnalysisAsSuggestionBtn.addEventListener('click', () => {
                 if (currentReportAiAnalysisText) {
-                    // Set the textarea value to the stored raw text
                     elements.adminSuggestions.value = currentReportAiAnalysisText.trim();
-                    // Optional: Move focus to the textarea for immediate editing
                     elements.adminSuggestions.focus(); 
                     showSuccess('คัดลอกบทวิเคราะห์ไปยังช่องข้อเสนอแนะแล้ว');
                 } else {
                     showError('ไม่มีข้อมูลบทวิเคราะห์ที่จะใช้งานได้');
                 }
             });
-            // ========== END: NEW/MODIFIED CODE ==========
         }
         
         function setupSelectorListeners(allData) {
              elements.viewAuthoritySelect.addEventListener('change', () => {
                 populateTransformerSelector(allData, elements.viewAuthoritySelect.value);
-                // After repopulating transformers, also repopulate months for the new (or first) transformer
                 populateMonthSelector(allData, elements.viewAuthoritySelect.value, elements.viewTransformerSelect.value);
                 loadSelectedData(allData);
             });
@@ -3060,14 +3019,13 @@ ${adminSuggestions || "ไม่มี"}
             try {
                 console.log('🚀 Initializing dashboard...');
                 
-                // Initialize Supabase client
                 if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_URL.includes('YOUR_SUPABASE_URL')) {
                     throw new Error("กรุณาใส่ Supabase URL และ Anon Key ของคุณในโค้ดก่อน");
                 }
                 supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log("Supabase client initialized.");
 
-                setupEventListeners(); // Setup listeners first to make UI interactive.
+                setupEventListeners();
                 setupAdminTabs();
 
                 const today = new Date();
@@ -3084,20 +3042,19 @@ ${adminSuggestions || "ไม่มี"}
                     elements.startDateInput.value = thirtyDaysAgo.toISOString().split('T')[0];
                 }
                 
-                // Fetch initial data and then subscribe to changes
                 await fetchAndProcessInitialData();
                 
                 const analysisChannel = supabase.channel('public:analysis')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'analysis' }, payload => {
                         console.log('Analysis data change received!', payload);
-                        fetchAndProcessInitialData(); // Re-fetch all data on any change
+                        fetchAndProcessInitialData();
                     })
                     .subscribe();
 
                 const reportsChannel = supabase.channel('public:edit_reports')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'edit_reports' }, payload => {
                         console.log('Edit reports change received!', payload);
-                        if (!elements.adminReportsSection.classList.contains('hidden')) {
+                        if (currentUser.role === 'admin' && !elements.adminReportsSection.classList.contains('hidden')) {
                             fetchAndDisplayReports();
                         }
                     })
