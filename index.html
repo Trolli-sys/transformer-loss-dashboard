@@ -2666,7 +2666,7 @@ ${currentAnalysisText}
                 elements.reportsTableBody.innerHTML = '';
                 reports.forEach(report => {
                     const row = document.createElement('tr');
-                    const hasFeedback = report.admin_suggestions && report.admin_suggestions.trim() !== '';
+                    const hasFeedback = report.admin_suggestions !== null;
                     row.innerHTML = `
                         <td>${new Date(report.created_at).toLocaleDateString('th-TH')}</td>
                         <td>${report.reporter_name}</td>
