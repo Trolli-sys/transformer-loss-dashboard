@@ -1,8 +1,3 @@
-ได้เลยครับ นี่คือโค้ดฉบับสมบูรณ์ที่แก้ไขเฉพาะส่วนของฟังก์ชัน `renderHighestLossChart` ตามที่คุณต้องการแล้ว ส่วนอื่นๆ ของโค้ดยังคงเหมือนเดิมทุกประการครับ
-
-คุณสามารถคัดลอกโค้ดทั้งหมดนี้ไปใช้งานได้ทันที
-
-```html
 <!DOCTYPE html>
 <html lang="th">
 
@@ -1768,7 +1763,6 @@
                         const latestDataForGroup = allData[authority][transformerKey][latestMonth];
                         if (latestDataForGroup && latestDataForGroup.results) {
                             latestDataForGroup.results.forEach(result => {
-                                // Added authority to the data object
                                 latestLossData.push({
                                     transformerId: result.transformerId,
                                     lossPercent: result.lossPercent || 0,
@@ -1801,18 +1795,39 @@
                 chart: { type: 'bar', height: 400, toolbar: { show: true } },
                 plotOptions: { bar: { columnWidth: '55%', borderRadius: 8, distributed: true } },
                 colors: topTenLoss.map(d => getBarColor(d.lossPercent)),
-                dataLabels: { enabled: true, formatter: (val) => val + "%", offsetY: -20, style: { fontSize: '12px', colors: ["#304758"] } },
+                dataLabels: { 
+                    enabled: true, 
+                    // --- MODIFICATION START ---
+                    // This formatter now shows the percentage AND the authority name on the bar.
+                    formatter: function(val, opts) {
+                        const authority = topTenLoss[opts.dataPointIndex].authority;
+                        return `${parseFloat(val).toFixed(2)}% (${authority})`;
+                    },
+                    // --- MODIFICATION END ---
+                    offsetY: -20, 
+                    style: { 
+                        fontSize: '12px', 
+                        colors: ["#304758"] 
+                    } 
+                },
                 legend: { show: false },
                 xaxis: {
-                    // Updated categories to show authority
-                    categories: topTenLoss.map(d => `${d.transformerId} (${d.authority})`),
-                    // Updated axis title
-                    title: { text: 'รหัสหม้อแปลง (การไฟฟ้า)' },
+                    // Reverted to show only the transformer ID, as the authority is now on the bar.
+                    categories: topTenLoss.map(d => d.transformerId),
+                    title: { text: 'รหัสหม้อแปลง' },
                 },
                 yaxis: { title: { text: 'เปอร์เซ็นต์ Loss (%)' }, labels: { formatter: (val) => val.toFixed(0) + '%' } },
                 title: { text: '10 อันดับหม้อแปลงที่ค่า Loss สูงสุด', align: 'left', style: { fontSize: '22px', fontWeight: 'bold' } },
                 subtitle: { text: 'ข้อมูลล่าสุดจากผลการวิเคราะห์ทั้งหมดในระบบ', align: 'left', style: { color: '#6b7280' } },
-                tooltip: { theme: 'dark', y: { formatter: (val) => val + " %" } },
+                tooltip: { 
+                    theme: 'dark', 
+                    y: { 
+                        formatter: function(val, opts) {
+                            const authority = topTenLoss[opts.dataPointIndex].authority;
+                            return `${val} % (การไฟฟ้า: ${authority})`
+                        }
+                    } 
+                },
                 grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
                 noData: { text: 'กำลังรอข้อมูล...' }
             };
@@ -1988,7 +2003,7 @@ ${currentAnalysisText}
         }
 
         function populateMonthSelector(allData, selectedAuthority, selectedTransformer) {
-            const months = (selectedAuthority && selectedTransformer && allData[selectedAuthority]?.[selectedTransformer]) 
+            const months = (selectedAuthority && selectedTransformer && allAnalysisData[selectedAuthority]?.[selectedTransformer]) 
                 ? Object.keys(allData[selectedAuthority][selectedTransformer]).sort().reverse() 
                 : [];
             elements.viewMonthSelect.innerHTML = '<option value="">-- เลือกเดือน --</option>';
