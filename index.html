@@ -1792,18 +1792,13 @@
 
             const options = {
                 series: [{ name: 'Loss (%)', data: topTenLoss.map(d => d.lossPercent.toFixed(2)) }],
-                chart: { type: 'bar', height: 400, toolbar: { show: true } },
+                // Increased height to give more space for rotated labels
+                chart: { type: 'bar', height: 450, toolbar: { show: true } },
                 plotOptions: { bar: { columnWidth: '55%', borderRadius: 8, distributed: true } },
                 colors: topTenLoss.map(d => getBarColor(d.lossPercent)),
                 dataLabels: { 
                     enabled: true, 
-                    // --- MODIFICATION START ---
-                    // This formatter now shows the percentage AND the authority name on the bar.
-                    formatter: function(val, opts) {
-                        const authority = topTenLoss[opts.dataPointIndex].authority;
-                        return `${parseFloat(val).toFixed(2)}% (${authority})`;
-                    },
-                    // --- MODIFICATION END ---
+                    formatter: (val) => val + "%", 
                     offsetY: -20, 
                     style: { 
                         fontSize: '12px', 
@@ -1812,22 +1807,30 @@
                 },
                 legend: { show: false },
                 xaxis: {
-                    // Reverted to show only the transformer ID, as the authority is now on the bar.
-                    categories: topTenLoss.map(d => d.transformerId),
-                    title: { text: 'รหัสหม้อแปลง' },
+                    // This is the original format that was causing the issue
+                    categories: topTenLoss.map(d => `${d.transformerId} (${d.authority})`),
+                    
+                    // --- MODIFICATION START ---
+                    // This object fixes the label cutting issue by rotating them
+                    labels: {
+                        rotate: -65,
+                        rotateAlways: true,
+                        hideOverlappingLabels: true,
+                        trim: false, // Ensure labels are not trimmed
+                        style: {
+                            fontSize: '11px',
+                            fontFamily: 'Sarabun, sans-serif',
+                        },
+                    },
+                    // --- MODIFICATION END ---
+                    
+                    title: { text: 'รหัสหม้อแปลง (การไฟฟ้า)' },
+                    tickPlacement: 'on'
                 },
                 yaxis: { title: { text: 'เปอร์เซ็นต์ Loss (%)' }, labels: { formatter: (val) => val.toFixed(0) + '%' } },
                 title: { text: '10 อันดับหม้อแปลงที่ค่า Loss สูงสุด', align: 'left', style: { fontSize: '22px', fontWeight: 'bold' } },
                 subtitle: { text: 'ข้อมูลล่าสุดจากผลการวิเคราะห์ทั้งหมดในระบบ', align: 'left', style: { color: '#6b7280' } },
-                tooltip: { 
-                    theme: 'dark', 
-                    y: { 
-                        formatter: function(val, opts) {
-                            const authority = topTenLoss[opts.dataPointIndex].authority;
-                            return `${val} % (การไฟฟ้า: ${authority})`
-                        }
-                    } 
-                },
+                tooltip: { theme: 'dark', y: { formatter: (val) => val + " %" } },
                 grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
                 noData: { text: 'กำลังรอข้อมูล...' }
             };
