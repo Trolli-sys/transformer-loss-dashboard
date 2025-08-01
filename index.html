@@ -1749,6 +1749,9 @@
             renderMeterChart(data);
         }
 
+        // ==================================================================
+        // ========= START: CODE MODIFICATION FOR THE CHART =================
+        // ==================================================================
         function renderHighestLossChart(allData) {
             if (charts.highestLoss) charts.highestLoss.destroy();
             const latestLossData = [];
@@ -1789,7 +1792,18 @@
 
             const options = {
                 series: [{ name: 'Loss (%)', data: topTenLoss.map(d => d.lossPercent.toFixed(2)) }],
-                chart: { type: 'bar', height: 450, toolbar: { show: true } },
+                chart: { 
+                    type: 'bar', 
+                    height: 450, 
+                    // --- MODIFICATION START ---
+                    toolbar: { 
+                        show: false // Hides the toolbar (zoom, pan, etc.)
+                    },
+                    zoom: {
+                        enabled: false // Explicitly disables zooming
+                    }
+                    // --- MODIFICATION END ---
+                },
                 plotOptions: { bar: { columnWidth: '55%', borderRadius: 8, distributed: true } },
                 colors: topTenLoss.map(d => getBarColor(d.lossPercent)),
                 dataLabels: { 
@@ -1803,7 +1817,9 @@
                 },
                 legend: { show: false },
                 xaxis: {
-                    categories: topTenLoss.map(d => `${d.transformerId} (${d.authority})`),
+                    // --- MODIFICATION START ---
+                    // Reverted to show only the transformer ID
+                    categories: topTenLoss.map(d => d.transformerId),
                     labels: {
                         rotate: -65,
                         rotateAlways: true,
@@ -1814,13 +1830,23 @@
                             fontFamily: 'Sarabun, sans-serif',
                         },
                     },
-                    title: { text: 'รหัสหม้อแปลง (การไฟฟ้า)' },
+                    // Reverted the axis title
+                    title: { text: 'รหัสหม้อแปลง' },
+                    // --- MODIFICATION END ---
                     tickPlacement: 'on'
                 },
                 yaxis: { title: { text: 'เปอร์เซ็นต์ Loss (%)' }, labels: { formatter: (val) => val.toFixed(0) + '%' } },
                 title: { text: '10 อันดับหม้อแปลงที่ค่า Loss สูงสุด', align: 'left', style: { fontSize: '22px', fontWeight: 'bold' } },
                 subtitle: { text: 'ข้อมูลล่าสุดจากผลการวิเคราะห์ทั้งหมดในระบบ', align: 'left', style: { color: '#6b7280' } },
-                tooltip: { theme: 'dark', y: { formatter: (val) => val + " %" } },
+                tooltip: { 
+                    theme: 'dark', 
+                    y: { 
+                        formatter: function(val, opts) {
+                            const authority = topTenLoss[opts.dataPointIndex].authority;
+                            return `${val} % (การไฟฟ้า: ${authority})`
+                        }
+                    } 
+                },
                 grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
                 noData: { text: 'กำลังรอข้อมูล...' }
             };
@@ -1828,6 +1854,10 @@
             charts.highestLoss = new ApexCharts(elements.highestLossChart, options);
             charts.highestLoss.render();
         }
+        // ==================================================================
+        // ========= END: CODE MODIFICATION FOR THE CHART ===================
+        // ==================================================================
+
 
         function renderTrendChart(data) {
             if (charts.trend) charts.trend.destroy();
@@ -1900,9 +1930,6 @@
             throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
         }
 
-        // ==================================================================
-        // ========= START: CODE MODIFICATION FOR AI ANALYSIS ===============
-        // ==================================================================
         async function getAiAnalysis(results, avgLossPercent) {
             showElement(elements.aiLoader);
             hideElement(elements.aiContent);
@@ -1912,7 +1939,6 @@
             
             const currentDataSummary = (results || []).map(r => `- หม้อแปลง ${r.transformerId}: Loss ${r.lossPercent.toFixed(2)}%`).join('\n');
             
-            // --- MODIFIED PROMPT START ---
             const prompt = `ในฐานะผู้เชี่ยวชาญด้านวิศวกรรมไฟฟ้า, โปรดวิเคราะห์ข้อมูลค่า Loss ของหม้อแปลงต่อไปนี้ และจัดทำรายงานสรุปที่อ่านง่ายสำหรับผู้ปฏิบัติงาน โดยใช้ Markdown และ Emojis เพื่อเน้นประเด็นสำคัญ
 
 **ข้อมูล:**
@@ -1944,7 +1970,6 @@ ${currentDataSummary}
 **ข้อกำหนด:**
 - ใช้ภาษาไทยที่กระชับ เข้าใจง่าย และจัดรูปแบบให้อ่านสบายตา
 - **เริ่มต้นบทวิเคราะห์ด้วยหัวข้อ "### ⚡️ สรุปภาพรวม" ทันที โดยไม่ต้องใส่หัวข้อรายงาน, วันที่, หรือชื่อผู้จัดทำ**`;
-            // --- MODIFIED PROMPT END ---
 
             try {
                 currentAnalysisText = await callGeminiAPI(prompt);
@@ -1959,9 +1984,6 @@ ${currentDataSummary}
                 hideElement(elements.aiLoader);
             }
         }
-        // ==================================================================
-        // ========= END: CODE MODIFICATION FOR AI ANALYSIS =================
-        // ==================================================================
         
         async function generateActionPlan() {
              showElement(elements.actionPlanSection);
