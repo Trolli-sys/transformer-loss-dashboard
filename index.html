@@ -1,3 +1,8 @@
+ได้เลยครับ นี่คือโค้ดฉบับสมบูรณ์ที่แก้ไขเฉพาะส่วนของฟังก์ชัน `renderHighestLossChart` ตามที่คุณต้องการแล้ว ส่วนอื่นๆ ของโค้ดยังคงเหมือนเดิมทุกประการครับ
+
+คุณสามารถคัดลอกโค้ดทั้งหมดนี้ไปใช้งานได้ทันที
+
+```html
 <!DOCTYPE html>
 <html lang="th">
 
@@ -1749,6 +1754,9 @@
             renderMeterChart(data);
         }
 
+        // ==================================================================
+        // ========= START: CODE MODIFICATION FOR THE CHART =================
+        // ==================================================================
         function renderHighestLossChart(allData) {
             if (charts.highestLoss) charts.highestLoss.destroy();
             const latestLossData = [];
@@ -1760,10 +1768,11 @@
                         const latestDataForGroup = allData[authority][transformerKey][latestMonth];
                         if (latestDataForGroup && latestDataForGroup.results) {
                             latestDataForGroup.results.forEach(result => {
+                                // Added authority to the data object
                                 latestLossData.push({
                                     transformerId: result.transformerId,
                                     lossPercent: result.lossPercent || 0,
-                                    authority: authority
+                                    authority: authority 
                                 });
                             });
                         }
@@ -1795,8 +1804,10 @@
                 dataLabels: { enabled: true, formatter: (val) => val + "%", offsetY: -20, style: { fontSize: '12px', colors: ["#304758"] } },
                 legend: { show: false },
                 xaxis: {
-                    categories: topTenLoss.map(d => d.transformerId),
-                    title: { text: 'รหัสหม้อแปลง' },
+                    // Updated categories to show authority
+                    categories: topTenLoss.map(d => `${d.transformerId} (${d.authority})`),
+                    // Updated axis title
+                    title: { text: 'รหัสหม้อแปลง (การไฟฟ้า)' },
                 },
                 yaxis: { title: { text: 'เปอร์เซ็นต์ Loss (%)' }, labels: { formatter: (val) => val.toFixed(0) + '%' } },
                 title: { text: '10 อันดับหม้อแปลงที่ค่า Loss สูงสุด', align: 'left', style: { fontSize: '22px', fontWeight: 'bold' } },
@@ -1809,6 +1820,9 @@
             charts.highestLoss = new ApexCharts(elements.highestLossChart, options);
             charts.highestLoss.render();
         }
+        // ==================================================================
+        // ========= END: CODE MODIFICATION FOR THE CHART ===================
+        // ==================================================================
 
 
         function renderTrendChart(data) {
@@ -2369,3 +2383,4 @@ ${adminSuggestions || "ไม่มี"}
     </script>
 </body>
 </html>
+```
