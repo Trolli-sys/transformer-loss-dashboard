@@ -1688,9 +1688,9 @@
                      if (uniqueTransformerGroups.has(transformerKey)) continue;
                      uniqueTransformerGroups.add(transformerKey);
                     
-                     const latestMonth = Object.keys(allData[authority][transformerKey]).sort().pop();
+                     const latestMonth = Object.keys(allAnalysisData[authority][transformerKey]).sort().pop();
                      if (latestMonth) {
-                        const latestData = allData[authority][transformerKey][latestMonth];
+                        const latestData = allAnalysisData[authority][transformerKey][latestMonth];
                         totalTransformers += latestData.transformerCount || 0;
                         totalMeters += latestData.meterCount || 0;
                         totalEnergyOut += latestData.totalTransformerEnergy || 0;
@@ -1760,7 +1760,7 @@
                 for (const transformerKey in allData[authority]) {
                     const latestMonth = Object.keys(allData[authority][transformerKey]).sort().pop();
                     if(latestMonth) {
-                        const latestDataForGroup = allData[authority][transformerKey][latestMonth];
+                        const latestDataForGroup = allAnalysisData[authority][transformerKey][latestMonth];
                         if (latestDataForGroup && latestDataForGroup.results) {
                             latestDataForGroup.results.forEach(result => {
                                 latestLossData.push({
@@ -1792,7 +1792,6 @@
 
             const options = {
                 series: [{ name: 'Loss (%)', data: topTenLoss.map(d => d.lossPercent.toFixed(2)) }],
-                // Increased height to give more space for rotated labels
                 chart: { type: 'bar', height: 450, toolbar: { show: true } },
                 plotOptions: { bar: { columnWidth: '55%', borderRadius: 8, distributed: true } },
                 colors: topTenLoss.map(d => getBarColor(d.lossPercent)),
@@ -1807,30 +1806,39 @@
                 },
                 legend: { show: false },
                 xaxis: {
-                    // This is the original format that was causing the issue
-                    categories: topTenLoss.map(d => `${d.transformerId} (${d.authority})`),
-                    
                     // --- MODIFICATION START ---
-                    // This object fixes the label cutting issue by rotating them
+                    // Reverted to show only the transformer ID
+                    categories: topTenLoss.map(d => d.transformerId),
+                    
+                    // Kept the rotation to prevent overlapping labels
                     labels: {
                         rotate: -65,
                         rotateAlways: true,
                         hideOverlappingLabels: true,
-                        trim: false, // Ensure labels are not trimmed
+                        trim: false,
                         style: {
                             fontSize: '11px',
                             fontFamily: 'Sarabun, sans-serif',
                         },
                     },
-                    // --- MODIFICATION END ---
                     
-                    title: { text: 'รหัสหม้อแปลง (การไฟฟ้า)' },
+                    // Reverted the axis title
+                    title: { text: 'รหัสหม้อแปลง' },
+                    // --- MODIFICATION END ---
                     tickPlacement: 'on'
                 },
                 yaxis: { title: { text: 'เปอร์เซ็นต์ Loss (%)' }, labels: { formatter: (val) => val.toFixed(0) + '%' } },
                 title: { text: '10 อันดับหม้อแปลงที่ค่า Loss สูงสุด', align: 'left', style: { fontSize: '22px', fontWeight: 'bold' } },
                 subtitle: { text: 'ข้อมูลล่าสุดจากผลการวิเคราะห์ทั้งหมดในระบบ', align: 'left', style: { color: '#6b7280' } },
-                tooltip: { theme: 'dark', y: { formatter: (val) => val + " %" } },
+                tooltip: { 
+                    theme: 'dark', 
+                    y: { 
+                        formatter: function(val, opts) {
+                            const authority = topTenLoss[opts.dataPointIndex].authority;
+                            return `${val} % (การไฟฟ้า: ${authority})`
+                        }
+                    } 
+                },
                 grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
                 noData: { text: 'กำลังรอข้อมูล...' }
             };
