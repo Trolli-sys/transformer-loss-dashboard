@@ -10,9 +10,14 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- *** NEW: Leaflet Map Library *** -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- REMOVE Leaflet Map Library -->
+    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" ... /> -->
+    <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" ... ></script> -->
+
+    <!-- ADD Google Maps API Script -->
+    <!-- !!! IMPORTANT: Replace YOUR_API_KEY_HERE with your actual Google Maps API Key !!! -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC-bqu1W2KS1GHq6uig66gcn-s0qcXNqHs"></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -1121,7 +1126,8 @@
         // --- GLOBAL STATE ---
         let currentUser = { role: 'user' };
         let charts = { trend: null, meter: null, highestLoss: null, suspiciousMeter: null };
-        let mapInstance = null; // For Leaflet map
+        let mapInstance = null; // For Google Map
+        let mapMarker = null; // For Google Map Marker
         let analysisDone = false;
         let transformerMeterMappings = [];
         let currentAnalysisText = '';
@@ -2009,7 +2015,7 @@
             charts.suspiciousMeter.render();
         }
 
-        // *** NEW: Map Rendering Function ***
+        // *** NEW: Map Rendering Function (Google Maps) ***
         function renderTransformerMap(data) {
             const lat = data.latitude;
             const lon = data.longitude;
@@ -2019,20 +2025,41 @@
                 showElement(elements.transformerMapContainer);
                 hideElement(elements.mapNoData);
 
-                if (mapInstance) {
-                    mapInstance.remove();
-                    mapInstance = null;
+                const position = { lat: lat, lng: lon };
+
+                if (!mapInstance) {
+                    mapInstance = new google.maps.Map(elements.transformerMapContainer, {
+                        center: position,
+                        zoom: 16,
+                        mapId: 'TRANSFORMER_LOSS_MAP' // Optional: for cloud-based styling
+                    });
+                } else {
+                    mapInstance.setCenter(position);
                 }
 
-                mapInstance = L.map(elements.transformerMapContainer).setView([lat, lon], 16);
+                if (mapMarker) {
+                    mapMarker.setMap(null); // Remove previous marker
+                }
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(mapInstance);
+                mapMarker = new google.maps.Marker({
+                    position: position,
+                    map: mapInstance,
+                    title: transformerIds,
+                });
 
-                L.marker([lat, lon]).addTo(mapInstance)
-                    .bindPopup(`<b>หม้อแปลง:</b><br>${transformerIds}`)
-                    .openPopup();
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<b>หม้อแปลง:</b><br>${transformerIds}`
+                });
+
+                mapMarker.addListener("click", () => {
+                    infoWindow.open({
+                        anchor: mapMarker,
+                        map: mapInstance,
+                    });
+                });
+                
+                // Open it by default
+                infoWindow.open({ anchor: mapMarker, map: mapInstance });
 
             } else {
                 hideElement(elements.transformerMapContainer);
@@ -2104,7 +2131,7 @@ ${summaryText}
 - ระบุหม้อแปลงที่ **น่าเป็นห่วงที่สุด** ที่ควรตรวจสอบก่อน
 
 ### 📈 การวิเคราะห์พฤติกรรมการใช้พลังงาน
-- จากข้อมูลสรุปรายวัน, มีรูปแบบการใช้พลังงานที่ผิดปกติหรือไม่? (เช่น สูง/ต่ำผิดปกติในบางวัน)
+- จากข้อมูลสรุปรายวัน, มีรูปแบบการใช้พลังงานที่ผิดปกติหรือไม่? (เช่น สูง/ต่ำผิดปกติในบางวัน, แตกต่างกันมากระหว่างวันทำงาน/วันหยุด)
 - ความต้องการพลังงานสูงสุด (Peak Power) สอดคล้องกับการใช้พลังงานรวมหรือไม่?
 
 ### 🔧 การสูญเสียทางเทคนิค (Technical Loss)
@@ -2114,7 +2141,7 @@ ${summaryText}
 - **(เน้นส่วนนี้เป็นพิเศษ)** จากข้อมูลพฤติกรรมการใช้งานและค่า Loss ที่สูง, ให้วิเคราะห์ความเป็นไปได้ของ Non-technical Loss
 - **สาเหตุที่เป็นไปได้:**
     - **การลักลอบใช้ไฟฟ้า:** มีวันที่ใช้พลังงานสูงแต่ไม่สอดคล้องกับพฤติกรรมปกติหรือไม่?
-    - **มิเตอร์ผิดพลาด/ชำรุด:** เปรียบเทียบข้อมูลการใช้พลังงานของมิเตอร์ทั้งหมด มีมิเตอร์ตัวใดที่แสดงค่าผิดปกติ (เช่น ค่าเป็น 0 หรือต่ำมาก) หรือไม่?
+    - **มิเตอร์ผิดพลาด/ชำรุด:** เปรียบเทียบข้อมูลการใช้พลังงานของมิเตอร์ทั้งหมด มีมิเตอร์ตัวใดที่แสดงค่าผิดปกติ (เช่น ค่าเป็น 0 หรือต่ำมาก ทั้งที่เป็นผู้ใช้ไฟรายใหญ่) หรือไม่?
 - **ขั้นตอนการตรวจสอบ:**
     - เสนอแนะขั้นตอนที่เป็นรูปธรรม **อย่างน้อย 3 ข้อ** สำหรับทีมช่างเพื่อเข้าตรวจสอบปัญหา โดยอ้างอิงจากข้อมูลรายวันและข้อมูลมิเตอร์
 
@@ -2646,5 +2673,3 @@ ${adminSuggestions || "ไม่มี"}
 </body>
 </html>
 ```
-
-
