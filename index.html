@@ -984,8 +984,11 @@
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <!-- Meter Consumption Chart -->
                     <div class="chart-container">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">10 อันดับมิเตอร์ที่ใช้พลังงานสูงสุด</h3>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">10 อันดับมิเตอร์ที่ใช้พลังงานสะสมสูงสุด</h3>
                         <div id="meter-consumption-chart"></div>
+                        <h3 class="text-lg font-bold text-gray-800 mt-8 mb-4">มิเตอร์ที่น่าสงสัย (ใช้พลังงานน้อยผิดปกติ)</h3>
+                        <div id="suspicious-meter-chart"></div>
+                        <p id="no-suspicious-meters" class="text-center text-gray-500 py-8 hidden">ไม่พบมิเตอร์ที่น่าสงสัย</p>
                     </div>
 
                     <!-- AI Analysis -->
@@ -1117,7 +1120,7 @@
 
         // --- GLOBAL STATE ---
         let currentUser = { role: 'user' };
-        let charts = { trend: null, meter: null, highestLoss: null };
+        let charts = { trend: null, meter: null, highestLoss: null, suspiciousMeter: null };
         let mapInstance = null; // For Leaflet map
         let analysisDone = false;
         let transformerMeterMappings = [];
@@ -1218,6 +1221,8 @@
             // Chart elements
             trendChart: document.getElementById('consumption-trend-chart'),
             meterChart: document.getElementById('meter-consumption-chart'),
+            suspiciousMeterChart: document.getElementById('suspicious-meter-chart'),
+            noSuspiciousMeters: document.getElementById('no-suspicious-meters'),
             highestLossSection: document.getElementById('highest-loss-section'),
             highestLossChart: document.getElementById('highest-loss-chart'),
             transformerMapContainer: document.getElementById('transformer-map'),
@@ -1734,22 +1739,22 @@
         }
         
         // --- DISPLAY FUNCTIONS ---
-        async function displayResults(data) {
+        async function displayResults(currentMonthData, historicalData) {
             hideElement(elements.actionPlanSection);
             hideElement(elements.actionButtonsContainer);
             
-            elements.kpiTransformerEnergy.textContent = (data.totalTransformerEnergy || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
-            elements.kpiMeterEnergy.textContent = (data.totalMeterEnergy || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
-            elements.kpiLoss.textContent = (data.totalLoss || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+            elements.kpiTransformerEnergy.textContent = (currentMonthData.totalTransformerEnergy || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+            elements.kpiMeterEnergy.textContent = (currentMonthData.totalMeterEnergy || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+            elements.kpiLoss.textContent = (currentMonthData.totalLoss || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
-            const avgLossPercent = data.totalTransformerEnergy > 0 ? (data.totalLoss / data.totalTransformerEnergy) * 100 : 0;
+            const avgLossPercent = currentMonthData.totalTransformerEnergy > 0 ? (currentMonthData.totalLoss / currentMonthData.totalTransformerEnergy) * 100 : 0;
             elements.kpiLossPercent.textContent = `${avgLossPercent.toFixed(2)}%`;
 
-            updateKeyMetrics(data);
-            updateResultsTable(data);
-            renderCharts(data);
-            renderTransformerMap(data);
-            await getAiAnalysis(data.results, avgLossPercent, data.dataSummary);
+            updateKeyMetrics(currentMonthData);
+            updateResultsTable(currentMonthData);
+            renderCharts(currentMonthData, historicalData);
+            renderTransformerMap(currentMonthData);
+            await getAiAnalysis(currentMonthData.results, avgLossPercent, currentMonthData.dataSummary, historicalData);
             await checkAndDisplayFeedback();
         }
 
@@ -1821,9 +1826,10 @@
         }
 
         // --- CHART FUNCTIONS ---
-        function renderCharts(data) {
-            renderTrendChart(data);
-            renderMeterChart(data);
+        function renderCharts(currentMonthData, historicalData) {
+            renderTrendChart(currentMonthData);
+            renderMeterChart(historicalData);
+            renderSuspiciousMeterChart(historicalData);
         }
 
         function renderHighestLossChart(allData) {
@@ -1949,9 +1955,12 @@
             charts.trend.render();
         }
 
-        function renderMeterChart(data) {
+        function renderMeterChart(historicalData) {
             if (charts.meter) charts.meter.destroy();
-            const sortedMeters = [...(data.meterBreakdown || [])].sort((a, b) => b.energy - a.energy);
+            
+            const meterTotalsArray = Object.entries(historicalData.meterTotals).map(([meterId, energy]) => ({ meterId, energy }));
+            const sortedMeters = meterTotalsArray.sort((a, b) => b.energy - a.energy);
+            
             const topMeters = sortedMeters.slice(0, 10);
             const otherMetersSum = sortedMeters.slice(10).reduce((sum, m) => sum + m.energy, 0);
             
@@ -1960,15 +1969,44 @@
 
             const meterOptions = {
                 series: [{ name: 'Energy (kWh)', data: chartData.map(m => m.energy.toFixed(2)) }],
-                chart: { type: 'bar', height: 450, toolbar: { show: true } },
+                chart: { type: 'bar', height: 250, toolbar: { show: true } },
                 plotOptions: { bar: { horizontal: true, borderRadius: 6, distributed: true } },
                 colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6366F1', '#D946EF', '#64748B'],
                 legend: { show: false },
-                xaxis: { categories: chartData.map(m => m.meterId), title: { text: 'พลังงาน (kWh)' } },
+                xaxis: { categories: chartData.map(m => m.meterId), title: { text: 'พลังงานสะสม (kWh)' } },
                 tooltip: { y: { formatter: (val) => `${parseFloat(val).toLocaleString('en-US', { maximumFractionDigits: 2 })} kWh` } },
             };
             charts.meter = new ApexCharts(elements.meterChart, meterOptions);
             charts.meter.render();
+        }
+
+        function renderSuspiciousMeterChart(historicalData) {
+            if (charts.suspiciousMeter) charts.suspiciousMeter.destroy();
+
+            const suspiciousMeters = Object.entries(historicalData.meterTotals)
+                .map(([meterId, energy]) => ({ meterId, energy }))
+                .filter(m => m.energy <= 0);
+
+            if (suspiciousMeters.length === 0) {
+                hideElement(elements.suspiciousMeterChart);
+                showElement(elements.noSuspiciousMeters);
+                return;
+            }
+
+            showElement(elements.suspiciousMeterChart);
+            hideElement(elements.noSuspiciousMeters);
+
+            const options = {
+                series: [{ name: 'Energy (kWh)', data: suspiciousMeters.map(m => m.energy.toFixed(2)) }],
+                chart: { type: 'bar', height: 150, toolbar: { show: false } },
+                colors: ['#ef4444'],
+                plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+                xaxis: { categories: suspiciousMeters.map(m => m.meterId), title: { text: 'พลังงานสะสม (kWh)' } },
+                tooltip: { y: { formatter: (val) => `${parseFloat(val).toLocaleString()} kWh` } },
+            };
+
+            charts.suspiciousMeter = new ApexCharts(elements.suspiciousMeterChart, options);
+            charts.suspiciousMeter.render();
         }
 
         // *** NEW: Map Rendering Function ***
@@ -2025,7 +2063,7 @@
             throw new Error("ไม่ได้รับผลลัพธ์ที่ถูกต้องจาก AI");
         }
 
-        async function getAiAnalysis(results, avgLossPercent, dataSummary) {
+        async function getAiAnalysis(results, avgLossPercent, dataSummary, historicalData) {
             showElement(elements.aiLoader);
             hideElement(elements.aiContent);
             hideElement(elements.aiError);
@@ -2036,45 +2074,44 @@
             
             let summaryText = '';
             if (dataSummary) {
-                summaryText += "\n\n**ข้อมูลสรุปรายวันจากหม้อแปลง:**\n";
+                summaryText += "\n\n**ข้อมูลสรุปรายวันจากหม้อแปลง (เดือนล่าสุด):**\n";
                 if (dataSummary.transformerDaily && dataSummary.transformerDaily.length > 0) {
                     summaryText += dataSummary.transformerDaily.map(d => `- วันที่ ${d.date}: ใช้พลังงาน ${d.energy_used} kWh, ความต้องการสูงสุด ${d.peak_power} kW`).join('\n');
                 } else {
                     summaryText += "ไม่มีข้อมูลรายวัน\n";
                 }
+            }
 
-                summaryText += "\n**ข้อมูลการใช้พลังงานของมิเตอร์ทั้งหมด:**\n";
-                if (dataSummary.meterBreakdown && dataSummary.meterBreakdown.length > 0) {
-                    summaryText += dataSummary.meterBreakdown.map(m => `- มิเตอร์ ${m.meterId}: ${m.energy} kWh`).join('\n');
-                } else {
-                    summaryText += "ไม่มีข้อมูลมิเตอร์\n";
-                }
+            let historicalSummaryText = '';
+            if (historicalData && historicalData.monthlyLoss.length > 1) {
+                historicalSummaryText += "\n\n**ข้อมูลสรุปแนวโน้มย้อนหลัง:**\n";
+                historicalSummaryText += historicalData.monthlyLoss.map(h => `- เดือน ${h.month}: Loss ${h.lossPercent.toFixed(2)}%`).join('\n');
             }
 
             const prompt = `ในฐานะผู้เชี่ยวชาญด้านวิศวกรรมไฟฟ้า, โปรดวิเคราะห์ข้อมูลค่า Loss ของหม้อแปลงต่อไปนี้ และจัดทำรายงานสรุปที่อ่านง่ายสำหรับผู้ปฏิบัติงาน โดยใช้ Markdown และ Emojis เพื่อเน้นประเด็นสำคัญ
 
-**ข้อมูลสรุปค่า Loss:**
+**ข้อมูลสรุปค่า Loss (เดือนล่าสุด):**
 ${currentDataSummary}
 - **Loss เฉลี่ยรวม:** ${avgLossPercent.toFixed(2)}%
-
-**ข้อมูลพฤติกรรมการใช้งาน (Data Summary):**
+${historicalSummaryText}
 ${summaryText}
 
 **คำสั่ง:**
-โปรดสร้างบทวิเคราะห์เชิงลึกตามหัวข้อต่อไปนี้ โดยอ้างอิงจาก **ข้อมูลทั้งสองส่วน**:
+โปรดสร้างบทวิเคราะห์เชิงลึกตามหัวข้อต่อไปนี้ โดยอ้างอิงจาก **ข้อมูลทั้งหมดที่มี**:
 
-### ⚡️ สรุปภาพรวม
-- ประเมินสถานการณ์โดยรวม และระบุหม้อแปลงที่ **น่าเป็นห่วงที่สุด**
+### ⚡️ สรุปภาพรวมและแนวโน้ม
+- ประเมินสถานการณ์ของ **เดือนล่าสุด** เทียบกับ **แนวโน้มย้อนหลัง** (ดีขึ้น, แย่ลง, คงที่)
+- ระบุหม้อแปลงที่ **น่าเป็นห่วงที่สุด** ที่ควรตรวจสอบก่อน
 
 ### 📈 การวิเคราะห์พฤติกรรมการใช้พลังงาน
-- จากข้อมูลสรุปรายวัน, มีรูปแบบการใช้พลังงานที่ผิดปกติหรือไม่? (เช่น สูง/ต่ำผิดปกติในบางวัน, แตกต่างกันมากระหว่างวันทำงาน/วันหยุด)
-- ความต้องการพลังงานสูงสุด (Peak Power) เกิดขึ้นในช่วงใด และสอดคล้องกับการใช้พลังงานรวมหรือไม่?
+- จากข้อมูลสรุปรายวัน, มีรูปแบบการใช้พลังงานที่ผิดปกติหรือไม่? (เช่น สูง/ต่ำผิดปกติในบางวัน)
+- ความต้องการพลังงานสูงสุด (Peak Power) สอดคล้องกับการใช้พลังงานรวมหรือไม่?
 
 ### 🕵️‍♂️ **การวิเคราะห์เชิงลึก: การสูญเสียที่ไม่ใช่ทางเทคนิค (Non-technical Loss)**
 - **(เน้นส่วนนี้เป็นพิเศษ)** จากข้อมูลพฤติกรรมการใช้งานและค่า Loss ที่สูง, ให้วิเคราะห์ความเป็นไปได้ของ Non-technical Loss
 - **สาเหตุที่เป็นไปได้:**
     - **การลักลอบใช้ไฟฟ้า:** มีวันที่ใช้พลังงานสูงแต่ไม่สอดคล้องกับพฤติกรรมปกติหรือไม่?
-    - **มิเตอร์ผิดพลาด/ชำรุด:** เปรียบเทียบข้อมูลการใช้พลังงานของมิเตอร์ทั้งหมด มีมิเตอร์ตัวใดที่แสดงค่าผิดปกติ (เช่น ค่าเป็น 0 หรือต่ำมาก ทั้งที่เป็นผู้ใช้ไฟรายใหญ่) หรือไม่?
+    - **มิเตอร์ผิดพลาด/ชำรุด:** เปรียบเทียบข้อมูลการใช้พลังงานของมิเตอร์ทั้งหมด มีมิเตอร์ตัวใดที่แสดงค่าผิดปกติ (เช่น ค่าเป็น 0 หรือต่ำมาก) หรือไม่?
 - **ขั้นตอนการตรวจสอบ:**
     - เสนอแนะขั้นตอนที่เป็นรูปธรรม **อย่างน้อย 3 ข้อ** สำหรับทีมช่างเพื่อเข้าตรวจสอบปัญหา โดยอ้างอิงจากข้อมูลรายวันและข้อมูลมิเตอร์
 
@@ -2083,7 +2120,7 @@ ${summaryText}
 
 **ข้อกำหนด:**
 - ใช้ภาษาไทยที่กระชับ เข้าใจง่าย และจัดรูปแบบให้อ่านสบายตา
-- **เริ่มต้นบทวิเคราะห์ด้วยหัวข้อ "### ⚡️ สรุปภาพรวม" ทันที**`;
+- **เริ่มต้นบทวิเคราะห์ด้วยหัวข้อ "### ⚡️ สรุปภาพรวมและแนวโน้ม" ทันที**`;
 
             try {
                 currentAnalysisText = await callGeminiAPI(prompt);
@@ -2099,9 +2136,6 @@ ${summaryText}
             }
         }
         
-        // ==================================================================
-        // ========= START: CODE MODIFICATION FOR ACTION PLAN ===============
-        // ==================================================================
         async function generateActionPlan() {
              showElement(elements.actionPlanSection);
              showElement(elements.actionPlanLoader);
@@ -2109,7 +2143,6 @@ ${summaryText}
              hideElement(elements.actionPlanError);
              elements.generateActionPlanBtn.disabled = true;
 
-             // --- MODIFIED PROMPT START ---
              const prompt = `จากบทวิเคราะห์ AI:
 ---
 ${currentAnalysisText}
@@ -2133,7 +2166,6 @@ ${currentAnalysisText}
 **ข้อกำหนด:**
 - ใช้ภาษาไทยที่กระชับและเข้าใจง่าย
 - ต้องมีทั้งสองส่วนแยกจากกันอย่างชัดเจน`;
-            // --- MODIFIED PROMPT END ---
             
              try {
                 const actionPlanText = await callGeminiAPI(prompt);
@@ -2148,9 +2180,6 @@ ${currentAnalysisText}
                 elements.generateActionPlanBtn.disabled = false;
              }
         }
-        // ==================================================================
-        // ========= END: CODE MODIFICATION FOR ACTION PLAN =================
-        // ==================================================================
         
         // --- SELECTOR FUNCTIONS ---
         function populateSelectors(allData) {
@@ -2174,12 +2203,38 @@ ${currentAnalysisText}
 
         function populateMonthSelector(allData, selectedAuthority, selectedTransformer) {
             const months = (selectedAuthority && selectedTransformer && allAnalysisData[selectedAuthority]?.[selectedTransformer]) 
-                ? Object.keys(allData[selectedAuthority][selectedTransformer]).sort().reverse() 
+                ? Object.keys(allAnalysisData[selectedAuthority][selectedTransformer]).sort().reverse() 
                 : [];
             elements.viewMonthSelect.innerHTML = '<option value="">-- เลือกเดือน --</option>';
             months.forEach(month => {
                 elements.viewMonthSelect.innerHTML += `<option value="${month}">${month}</option>`;
             });
+        }
+
+        function getHistoricalDataForGroup(auth, trans) {
+            const groupData = allAnalysisData[auth]?.[trans] || {};
+            const aggregatedData = {
+                meterTotals: {},
+                monthlyLoss: []
+            };
+
+            const sortedMonths = Object.keys(groupData).sort();
+
+            for (const month of sortedMonths) {
+                const monthData = groupData[month];
+                const lossPercent = monthData.totalTransformerEnergy > 0 ? (monthData.totalLoss / monthData.totalTransformerEnergy) * 100 : 0;
+                aggregatedData.monthlyLoss.push({ month, lossPercent });
+
+                if (monthData.dataSummary && monthData.dataSummary.meterBreakdown) {
+                    monthData.dataSummary.meterBreakdown.forEach(meter => {
+                        if (!aggregatedData.meterTotals[meter.meterId]) {
+                            aggregatedData.meterTotals[meter.meterId] = 0;
+                        }
+                        aggregatedData.meterTotals[meter.meterId] += meter.energy;
+                    });
+                }
+            }
+            return aggregatedData;
         }
 
         async function loadSelectedData() {
@@ -2190,7 +2245,9 @@ ${currentAnalysisText}
             toggleElement(elements.deleteBtn, currentUser.role === 'admin' && analysisDone && month);
 
             if (auth && trans && month && allAnalysisData[auth]?.[trans]?.[month]) {
-                 await displayResults(allAnalysisData[auth][trans][month]);
+                const currentMonthData = allAnalysisData[auth][trans][month];
+                const historicalData = getHistoricalDataForGroup(auth, trans);
+                await displayResults(currentMonthData, historicalData);
             } else {
                  hideElement(elements.userViewReportFeedbackSection);
             }
@@ -2494,7 +2551,24 @@ ${adminSuggestions || "ไม่มี"}
                 loadSelectedData();
             });
             elements.viewTransformerSelect.addEventListener('change', (e) => {
-                populateMonthSelector(allData, elements.viewAuthoritySelect.value, e.target.value);
+                const auth = elements.viewAuthoritySelect.value;
+                const trans = e.target.value;
+                populateMonthSelector(allData, auth, trans);
+                
+                // Auto-fill coordinates
+                if (auth && trans && allData[auth]?.[trans]) {
+                    const months = Object.keys(allData[auth][trans]).sort().reverse();
+                    const latestMonthWithCoords = months.find(m => allData[auth][trans][m].latitude && allData[auth][trans][m].longitude);
+                    if (latestMonthWithCoords) {
+                        const data = allAnalysisData[auth][trans][latestMonthWithCoords];
+                        elements.latitudeInput.value = data.latitude;
+                        elements.longitudeInput.value = data.longitude;
+                    } else {
+                        elements.latitudeInput.value = '';
+                        elements.longitudeInput.value = '';
+                    }
+                }
+                
                 loadSelectedData();
             });
             elements.viewMonthSelect.addEventListener('change', () => {
