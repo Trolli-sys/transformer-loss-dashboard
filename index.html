@@ -10,14 +10,9 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- REMOVE Leaflet Map Library -->
-    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" ... /> -->
-    <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" ... ></script> -->
-
-    <!-- ADD Google Maps API Script -->
-    <!-- !!! IMPORTANT: Replace YOUR_API_KEY_HERE with your actual Google Maps API Key !!! -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC-bqu1W2KS1GHq6uig66gcn-s0qcXNqHs"></script>
+    <!-- *** NEW: Leaflet Map Library *** -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -344,6 +339,26 @@
             color: var(--primary-600);
             border-bottom-color: var(--primary-600);
             font-weight: 700;
+        }
+
+        .meter-tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            background-color: transparent;
+        }
+        .meter-tab:hover {
+            background-color: var(--gray-100);
+            color: var(--primary-500);
+        }
+        .meter-tab.active {
+            color: white;
+            background-color: var(--primary-600);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
 
@@ -987,13 +1002,24 @@
 
                 <!-- Bottom Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <!-- Meter Consumption Chart -->
+                    <!-- Meter Consumption Chart with Tabs -->
                     <div class="chart-container">
-                        <h3 class="text-lg font-bold text-gray-800 mb-4">10 อันดับมิเตอร์ที่ใช้พลังงานสะสมสูงสุด</h3>
-                        <div id="meter-consumption-chart"></div>
-                        <h3 class="text-lg font-bold text-gray-800 mt-8 mb-4">มิเตอร์ที่น่าสงสัย (ใช้พลังงานน้อยผิดปกติ)</h3>
-                        <div id="suspicious-meter-chart"></div>
-                        <p id="no-suspicious-meters" class="text-center text-gray-500 py-8 hidden">ไม่พบมิเตอร์ที่น่าสงสัย</p>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 id="meter-chart-title" class="text-lg font-bold text-gray-800">10 อันดับมิเตอร์ที่ใช้พลังงานสะสมสูงสุด</h3>
+                            <div class="bg-gray-100 p-1 rounded-lg flex space-x-1">
+                                <button id="top-meters-tab" class="meter-tab active">10 อันดับสูงสุด</button>
+                                <button id="suspicious-meters-tab" class="meter-tab">น่าสงสัย</button>
+                            </div>
+                        </div>
+                        <p id="meter-chart-subtitle" class="text-sm text-gray-500 -mt-2 mb-4">ข้อมูลสะสมจากทุกเดือนที่บันทึกไว้</p>
+                        
+                        <div id="top-meters-content">
+                            <div id="meter-consumption-chart"></div>
+                        </div>
+                        <div id="suspicious-meters-content" class="hidden">
+                            <div id="suspicious-meter-chart"></div>
+                            <p id="no-suspicious-meters" class="text-center text-gray-500 py-8 hidden">ไม่พบมิเตอร์ที่น่าสงสัย</p>
+                        </div>
                     </div>
 
                     <!-- AI Analysis -->
@@ -1233,6 +1259,12 @@
             highestLossChart: document.getElementById('highest-loss-chart'),
             transformerMapContainer: document.getElementById('transformer-map'),
             mapNoData: document.getElementById('map-no-data'),
+            meterChartTitle: document.getElementById('meter-chart-title'),
+            meterChartSubtitle: document.getElementById('meter-chart-subtitle'),
+            topMetersTab: document.getElementById('top-meters-tab'),
+            suspiciousMetersTab: document.getElementById('suspicious-meters-tab'),
+            topMetersContent: document.getElementById('top-meters-content'),
+            suspiciousMetersContent: document.getElementById('suspicious-meters-content'),
 
             // KPI elements
             kpiTransformerEnergy: document.getElementById('kpi-transformer-energy'),
@@ -1963,24 +1995,44 @@
 
         function renderMeterChart(historicalData) {
             if (charts.meter) charts.meter.destroy();
+
+            const meterData = Object.entries(historicalData.meterMonthlyTotals).map(([meterId, monthlyData]) => ({
+                meterId,
+                ...monthlyData
+            }));
             
-            const meterTotalsArray = Object.entries(historicalData.meterTotals).map(([meterId, energy]) => ({ meterId, energy }));
-            const sortedMeters = meterTotalsArray.sort((a, b) => b.energy - a.energy);
-            
-            const topMeters = sortedMeters.slice(0, 10);
-            const otherMetersSum = sortedMeters.slice(10).reduce((sum, m) => sum + m.energy, 0);
-            
-            const chartData = [...topMeters];
-            if (otherMetersSum > 0) chartData.push({ meterId: `มิเตอร์อื่นๆ (${sortedMeters.length - 10} ตัว)`, energy: otherMetersSum });
+            const sortedMeters = meterData.sort((a, b) => b.total - a.total).slice(0, 10);
+            const allMonths = [...new Set(meterData.flatMap(m => Object.keys(m).filter(k => k !== 'meterId' && k !== 'total')))].sort();
+
+            const series = allMonths.map(month => ({
+                name: month,
+                data: sortedMeters.map(meter => meter[month] || 0)
+            }));
 
             const meterOptions = {
-                series: [{ name: 'Energy (kWh)', data: chartData.map(m => m.energy.toFixed(2)) }],
-                chart: { type: 'bar', height: 250, toolbar: { show: true } },
-                plotOptions: { bar: { horizontal: true, borderRadius: 6, distributed: true } },
-                colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#F97316', '#EC4899', '#6366F1', '#D946EF', '#64748B'],
-                legend: { show: false },
-                xaxis: { categories: chartData.map(m => m.meterId), title: { text: 'พลังงานสะสม (kWh)' } },
-                tooltip: { y: { formatter: (val) => `${parseFloat(val).toLocaleString('en-US', { maximumFractionDigits: 2 })} kWh` } },
+                series: series,
+                chart: { type: 'bar', height: 400, stacked: true, toolbar: { show: true } },
+                plotOptions: { bar: { horizontal: true } },
+                stroke: { width: 1, colors: ['#fff'] },
+                xaxis: {
+                    categories: sortedMeters.map(m => m.meterId),
+                    title: { text: 'พลังงานสะสม (kWh)' },
+                    labels: {
+                        formatter: function (val) {
+                            return val.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                        }
+                    }
+                },
+                yaxis: { title: { show: false } },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return val.toLocaleString('en-US', { maximumFractionDigits: 2 }) + " kWh";
+                        }
+                    }
+                },
+                fill: { opacity: 1 },
+                legend: { position: 'top', horizontalAlign: 'left', offsetX: 40 }
             };
             charts.meter = new ApexCharts(elements.meterChart, meterOptions);
             charts.meter.render();
@@ -1989,9 +2041,9 @@
         function renderSuspiciousMeterChart(historicalData) {
             if (charts.suspiciousMeter) charts.suspiciousMeter.destroy();
 
-            const suspiciousMeters = Object.entries(historicalData.meterTotals)
-                .map(([meterId, energy]) => ({ meterId, energy }))
-                .filter(m => m.energy <= 0);
+            const suspiciousMeters = Object.entries(historicalData.meterMonthlyTotals)
+                .map(([meterId, data]) => ({ meterId, total: data.total }))
+                .filter(m => m.total <= 0);
 
             if (suspiciousMeters.length === 0) {
                 hideElement(elements.suspiciousMeterChart);
@@ -2003,7 +2055,7 @@
             hideElement(elements.noSuspiciousMeters);
 
             const options = {
-                series: [{ name: 'Energy (kWh)', data: suspiciousMeters.map(m => m.energy.toFixed(2)) }],
+                series: [{ name: 'Energy (kWh)', data: suspiciousMeters.map(m => m.total.toFixed(2)) }],
                 chart: { type: 'bar', height: 150, toolbar: { show: false } },
                 colors: ['#ef4444'],
                 plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
@@ -2244,7 +2296,7 @@ ${currentAnalysisText}
         function getHistoricalDataForGroup(auth, trans) {
             const groupData = allAnalysisData[auth]?.[trans] || {};
             const aggregatedData = {
-                meterTotals: {},
+                meterMonthlyTotals: {},
                 monthlyLoss: []
             };
 
@@ -2257,10 +2309,11 @@ ${currentAnalysisText}
 
                 if (monthData.dataSummary && monthData.dataSummary.meterBreakdown) {
                     monthData.dataSummary.meterBreakdown.forEach(meter => {
-                        if (!aggregatedData.meterTotals[meter.meterId]) {
-                            aggregatedData.meterTotals[meter.meterId] = 0;
+                        if (!aggregatedData.meterMonthlyTotals[meter.meterId]) {
+                            aggregatedData.meterMonthlyTotals[meter.meterId] = { total: 0 };
                         }
-                        aggregatedData.meterTotals[meter.meterId] += meter.energy;
+                        aggregatedData.meterMonthlyTotals[meter.meterId][month] = meter.energy;
+                        aggregatedData.meterMonthlyTotals[meter.meterId].total += meter.energy;
                     });
                 }
             }
@@ -2557,7 +2610,6 @@ ${adminSuggestions || "ไม่มี"}
             elements.saveAdminSuggestionBtn.addEventListener('click', handleSaveAdminSuggestion);
             elements.deleteReportBtn.addEventListener('click', () => handleDeleteReport(currentReportId));
             
-            // *** START: AI ANALYSIS FIX ***
             elements.analyzeReportBtn.addEventListener('click', handleAnalyzeReport);
             
             elements.useAiAnalysisAsSuggestionBtn.addEventListener('click', () => {
@@ -2569,9 +2621,26 @@ ${adminSuggestions || "ไม่มี"}
                     showError('ไม่มีข้อมูลบทวิเคราะห์ที่จะใช้งานได้');
                 }
             });
-            // *** END: AI ANALYSIS FIX ***
 
             elements.generateActionPlanBtn.addEventListener('click', generateActionPlan);
+
+            // Meter Chart Tabs
+            elements.topMetersTab.addEventListener('click', () => {
+                elements.topMetersTab.classList.add('active');
+                elements.suspiciousMetersTab.classList.remove('active');
+                showElement(elements.topMetersContent);
+                hideElement(elements.suspiciousMetersContent);
+                elements.meterChartTitle.textContent = '10 อันดับมิเตอร์ที่ใช้พลังงานสะสมสูงสุด';
+                elements.meterChartSubtitle.textContent = 'ข้อมูลสะสมจากทุกเดือนที่บันทึกไว้';
+            });
+            elements.suspiciousMetersTab.addEventListener('click', () => {
+                elements.suspiciousMetersTab.classList.add('active');
+                elements.topMetersTab.classList.remove('active');
+                showElement(elements.suspiciousMetersContent);
+                hideElement(elements.topMetersContent);
+                elements.meterChartTitle.textContent = 'มิเตอร์ที่น่าสงสัย';
+                elements.meterChartSubtitle.textContent = 'มิเตอร์ที่มียอดใช้พลังงานสะสมเป็น 0 หรือติดลบ';
+            });
         }
         
         function setupSelectorListeners(allData) {
