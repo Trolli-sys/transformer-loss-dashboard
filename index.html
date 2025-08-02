@@ -2038,6 +2038,9 @@ ${currentDataSummary}
             }
         }
         
+        // ==================================================================
+        // ========= START: CODE MODIFICATION FOR ACTION PLAN ===============
+        // ==================================================================
         async function generateActionPlan() {
              showElement(elements.actionPlanSection);
              showElement(elements.actionPlanLoader);
@@ -2045,6 +2048,7 @@ ${currentDataSummary}
              hideElement(elements.actionPlanError);
              elements.generateActionPlanBtn.disabled = true;
 
+             // --- MODIFIED PROMPT START ---
              const prompt = `จากบทวิเคราะห์ AI:
 ---
 ${currentAnalysisText}
@@ -2056,7 +2060,19 @@ ${currentAnalysisText}
 - การตรวจเปลี่ยนและเติมน้ำมัน (ระดับน้ำมัน, สารดูดความชื้น, ปะเก็น)
 - การตรวจสอบสภาพรับโหลด (กระแส, แรงดัน)
 
-โปรดสร้าง "แผนปฏิบัติการ" (Action Plan) ที่เป็นรูปธรรมสำหรับทีมช่างไฟฟ้า โดยเลือกรายการที่เกี่ยวข้องที่สุดจากแบบฟอร์มการตรวจฯ มาสร้างเป็นแผน จัดรูปแบบเป็นตาราง Markdown ที่มีคอลัมน์: "งานที่ต้องทำ (จากแบบฟอร์ม มป.3)", "หม้อแปลงเป้าหมาย", และ "ความสำคัญ (สูง/กลาง/ต่ำ)", คำแนะนำเพิ่มเติมจาก`;
+โปรดสร้าง "แผนปฏิบัติการ" (Action Plan) ที่เป็นรูปธรรมสำหรับทีมช่างไฟฟ้า โดยแบ่งออกเป็น **2 ส่วนที่ชัดเจน** ดังนี้:
+
+**ส่วนที่ 1: แผนการตรวจสอบตามแบบฟอร์ม มป.3**
+- สร้างตาราง Markdown ที่มี 4 คอลัมน์ตามนี้เป๊ะๆ: "งานที่ต้องทำ (จากแบบฟอร์ม มป.3)", "หม้อแปลงเป้าหมาย", "ความสำคัญ", และ "คำแนะนำเพิ่มเติม"
+- เลือกเฉพาะรายการที่เกี่ยวข้องที่สุดจากแบบฟอร์ม มป.3 ที่ให้มาเท่านั้น เพื่อใส่ในตาราง
+
+**ส่วนที่ 2: คำแนะนำเพิ่มเติม (นอกเหนือจาก มป.3)**
+- สร้างรายการ (bullet list) ของคำแนะนำเพิ่มเติมที่ **ปฏิบัติได้จริง** และอยู่นอกเหนือขอบเขตของ มป.3 ข้างต้น (เช่น การตรวจสอบมิเตอร์ของผู้ใช้ไฟรายใหญ่, การสำรวจสายส่งเพื่อหาสัญญาณการลักลอบใช้ไฟ, หรือการตรวจสอบบันทึกข้อมูลย้อนหลัง)
+
+**ข้อกำหนด:**
+- ใช้ภาษาไทยที่กระชับและเข้าใจง่าย
+- ต้องมีทั้งสองส่วนแยกจากกันอย่างชัดเจน`;
+            // --- MODIFIED PROMPT END ---
             
              try {
                 const actionPlanText = await callGeminiAPI(prompt);
@@ -2071,6 +2087,9 @@ ${currentAnalysisText}
                 elements.generateActionPlanBtn.disabled = false;
              }
         }
+        // ==================================================================
+        // ========= END: CODE MODIFICATION FOR ACTION PLAN =================
+        // ==================================================================
         
         // --- SELECTOR FUNCTIONS ---
         function populateSelectors(allData) {
@@ -2080,7 +2099,7 @@ ${currentAnalysisText}
                 elements.viewAuthoritySelect.innerHTML += `<option value="${auth}">${auth}</option>`;
             });
              // Clear subsequent dropdowns
-            elements.viewTransformerSelect.innerHTML = '<option value="">-- เลือกหม้อแปลง --</option>';
+            elements.viewTransformerSelect.innerHTML = '<option value="">-- เลือกกลุ่มหม้อแปลง --</option>';
             elements.viewMonthSelect.innerHTML = '<option value="">-- เลือกเดือน --</option>';
         }
 
